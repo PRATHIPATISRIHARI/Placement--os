@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SWE Placement OS | Target ₹20–30 LPA</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind Configuration for Dark Developer Theme -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            },
+            accent: {
+              500: '#6366f1',
+              600: '#4f46e5',
+            },
+            darkbg: '#0f172a',
+            darkcard: '#1e293b',
+            darkborder: '#334155'
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Custom scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="bg-darkbg text-slate-100 min-h-screen font-sans antialiased selection:bg-accent-500 selection:text-white">
+
+  <div id="app" class="flex flex-col lg:flex-row min-h-screen">
+
+    <!-- Mobile Header -->
+    <header class="lg:hidden flex items-center justify-between p-4 bg-darkcard border-b border-darkborder sticky top-0 z-50">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-accent-600 flex items-center justify-center font-bold text-white">OS</div>
+        <span class="font-semibold text-lg tracking-tight">Placement OS</span>
+      </div>
+      <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 rounded bg-slate-800 text-slate-300">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
+    </header>
+
+    <!-- Sidebar Navigation -->
+    <aside :class="{'hidden': !mobileMenuOpen, 'flex': mobileMenuOpen}" class="lg:flex flex-col w-full lg:w-64 bg-darkcard border-r border-darkborder p-4 sticky top-0 lg:h-screen z-40 justify-between">
+      <div>
+        <!-- Logo / Brand -->
+        <div class="hidden lg:flex items-center gap-3 px-2 py-3 mb-6 border-b border-darkborder">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-accent-600 to-brand-500 flex items-center justify-center font-black text-white text-xl shadow-lg shadow-accent-500/20">
+            ⚡
+          </div>
+          <div>
+            <h1 class="font-bold text-base tracking-tight text-slate-100">Placement OS</h1>
+            <p class="text-xs text-emerald-400 font-mono font-medium">Target: ₹20–30 LPA</p>
+          </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="space-y-1">
+          <button v-for="item in navItems" :key="item.id" @click="currentTab = item.id; mobileMenuOpen = false"
+            :class="[currentTab === item.id ? 'bg-accent-600 text-white shadow-md shadow-accent-600/30' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200', 'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150']">
+            <i :data-lucide="item.icon" class="w-4 h-4"></i>
+            <span>{{ item.label }}</span>
+            <span v-if="item.id === 'timer' && timer.running" class="ml-auto w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Quick Timer Widget in Sidebar -->
+      <div class="mt-6 p-3 rounded-xl bg-slate-900/80 border border-darkborder space-y-2">
+        <div class="flex items-center justify-between text-xs text-slate-400 font-medium">
+          <span class="flex items-center gap-1.5">
+            <span :class="timer.running ? 'bg-emerald-500' : 'bg-slate-500'" class="w-2 h-2 rounded-full"></span>
+            {{ timer.subject || 'No Task' }}
+          </span>
+          <span class="font-mono text-emerald-400">{{ formatTime(timer.seconds) }}</span>
+        </div>
+        <div class="flex gap-1.5">
+          <button v-if="!timer.running" @click="startTimer()" class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold transition">Start</button>
+          <button v-else @click="pauseTimer()" class="flex-1 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-semibold transition">Pause</button>
+          <button @click="stopTimer()" class="py-1.5 px-2 bg-rose-600/80 hover:bg-rose-500 text-white rounded text-xs font-semibold transition">Stop</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-4 lg:p-8 overflow-y-auto max-w-7xl">
+      
+      <!-- Top Banner Stats Bar -->
+      <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 bg-gradient-to-r from-darkcard via-slate-800 to-darkcard rounded-2xl border border-darkborder shadow-xl">
+        <div>
+          <p class="text-xs font-mono uppercase tracking-wider text-slate-400">{{ currentDateFormatted }}</p>
+          <h2 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+            Welcome back, Developer 🚀
+          </h2>
+        </div>
+        <div class="flex flex-wrap items-center gap-4 text-sm font-medium">
+          <div class="bg-slate-900/90 px-4 py-2 rounded-xl border border-darkborder">
+            <span class="text-slate-400 text-xs block">Streak</span>
+            <span class="text-amber-400 font-bold font-mono text-base">🔥 {{ streak.current }} Days</span>
+          </div>
+          <div class="bg-slate-900/90 px-4 py-2 rounded-xl border border-darkborder">
+            <span class="text-slate-400 text-xs block">Today's Study</span>
+            <span class="text-emerald-400 font-bold font-mono text-base">{{ formatHoursMins(todayActualMins) }} / {{ formatHoursMins(todayPlannedMins) }}</span>
+          </div>
+          <div class="bg-slate-900/90 px-4 py-2 rounded-xl border border-darkborder">
+            <span class="text-slate-400 text-xs block">Completion</span>
+            <span class="text-accent-500 font-bold font-mono text-base">{{ todayCompletionRate }}%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 1. DASHBOARD TAB ==================== -->
+      <div v-if="currentTab === 'dashboard'" class="space-y-6">
+        
+        <!-- Summary Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="p-5 rounded-xl bg-darkcard border border-darkborder flex items-center gap-4">
+            <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl"><i data-lucide="clock" class="w-6 h-6"></i></div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Remaining Today</p>
+              <h3 class="text-xl font-bold font-mono text-slate-100">{{ formatHoursMins(Math.max(0, todayPlannedMins - todayActualMins)) }}</h3>
+            </div>
+          </div>
+          <div class="p-5 rounded-xl bg-darkcard border border-darkborder flex items-center gap-4">
+            <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl"><i data-lucide="check-circle-2" class="w-6 h-6"></i></div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Tasks Completed</p>
+              <h3 class="text-xl font-bold font-mono text-slate-100">{{ completedTasksCount }} / {{ todayTasks.length }}</h3>
+            </div>
+          </div>
+          <div class="p-5 rounded-xl bg-darkcard border border-darkborder flex items-center gap-4">
+            <div class="p-3 bg-purple-500/10 text-purple-400 rounded-xl"><i data-lucide="bar-chart-2" class="w-6 h-6"></i></div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Weekly Total</p>
+              <h3 class="text-xl font-bold font-mono text-slate-100">{{ weeklyStudyHours }} hrs</h3>
+            </div>
+          </div>
+          <div class="p-5 rounded-xl bg-darkcard border border-darkborder flex items-center gap-4">
+            <div class="p-3 bg-amber-500/10 text-amber-400 rounded-xl"><i data-lucide="flame" class="w-6 h-6"></i></div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Longest Streak</p>
+              <h3 class="text-xl font-bold font-mono text-slate-100">{{ streak.longest }} Days</h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Today's Active Schedule -->
+          <div class="lg:col-span-2 p-6 rounded-2xl bg-darkcard border border-darkborder space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-darkborder">
+              <h3 class="font-bold text-lg text-slate-100 flex items-center gap-2">
+                <i data-lucide="calendar" class="w-5 h-5 text-accent-500"></i> Today's Schedule ({{ dayScheduleType === 'college' ? 'College Day' : 'Holiday' }})
+              </h3>
+              <div class="flex items-center gap-2">
+                <button @click="dayScheduleType = 'college'" :class="dayScheduleType === 'college' ? 'bg-accent-600 text-white' : 'bg-slate-800 text-slate-400'" class="px-3 py-1 rounded text-xs font-semibold transition">College</button>
+                <button @click="dayScheduleType = 'holiday'" :class="dayScheduleType === 'holiday' ? 'bg-accent-600 text-white' : 'bg-slate-800 text-slate-400'" class="px-3 py-1 rounded text-xs font-semibold transition">Holiday</button>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div v-for="slot in activeScheduleSlots" :key="slot.id" class="p-4 rounded-xl bg-slate-900/60 border border-darkborder/60 hover:border-darkborder transition flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-accent-500 font-semibold">{{ slot.time }}</span>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300">{{ slot.subject }}</span>
+                  </div>
+                  <h4 class="font-semibold text-slate-200 text-sm">{{ slot.title }}</h4>
+                  <ul v-if="slot.subtasks" class="text-xs text-slate-400 list-disc list-inside pl-1 space-y-0.5">
+                    <li v-for="sub in slot.subtasks" :key="sub">{{ sub }}</li>
+                  </ul>
+                </div>
+                <button @click="startTimerForSlot(slot)" class="self-start md:self-center px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+                  <i data-lucide="play" class="w-3.5 h-3.5"></i> Start Session
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subject Breakdown & Quick Actions -->
+          <div class="space-y-6">
+            <div class="p-6 rounded-2xl bg-darkcard border border-darkborder space-y-4">
+              <h3 class="font-bold text-lg text-slate-100 flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-5 h-5 text-emerald-400"></i> Subject-wise Time
+              </h3>
+              <div class="space-y-3">
+                <div v-for="(mins, subj) in subjectTimeBreakdown" :key="subj" class="space-y-1">
+                  <div class="flex justify-between text-xs font-medium">
+                    <span class="text-slate-300">{{ subj }}</span>
+                    <span class="text-slate-400 font-mono">{{ formatHoursMins(mins) }}</span>
+                  </div>
+                  <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div class="h-full bg-accent-500 rounded-full" :style="{ width: Math.min(100, (mins / 180) * 100) + '%' }"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Focus Reminder Callout -->
+            <div class="p-5 rounded-2xl bg-gradient-to-br from-indigo-950/60 to-purple-950/60 border border-indigo-500/30 space-y-2">
+              <h4 class="font-semibold text-indigo-300 text-sm flex items-center gap-2">
+                🎯 Target Strategy Tip
+              </h4>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Prioritize study duration over checkbox ticking. Your ₹20–30 LPA goal requires deep problem-solving stamina and system internals mastery.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ==================== 2. DAILY SCHEDULE TAB ==================== -->
+      <div v-if="currentTab === 'schedule'" class="space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-100">Schedule Templates</h2>
+            <p class="text-sm text-slate-400">Customize your fixed College vs. Holiday study routines.</p>
+          </div>
+          <div class="flex gap-2 bg-darkcard p-1 rounded-xl border border-darkborder">
+            <button @click="scheduleTab = 'college'" :class="scheduleTab === 'college' ? 'bg-accent-600 text-white' : 'text-slate-400'" class="px-4 py-2 rounded-lg text-xs font-semibold transition">College Schedule</button>
+            <button @click="scheduleTab = 'holiday'" :class="scheduleTab === 'holiday' ? 'bg-accent-600 text-white' : 'text-slate-400'" class="px-4 py-2 rounded-lg text-xs font-semibold transition">Holiday Schedule</button>
+          </div>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-darkcard border border-darkborder space-y-4">
+          <div v-for="(slot, idx) in (scheduleTab === 'college' ? collegeSchedule : holidaySchedule)" :key="idx" class="p-4 rounded-xl bg-slate-900 border border-darkborder space-y-3">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label class="text-xs text-slate-400 block mb-1">Time Slot</label>
+                <input v-model="slot.time" class="w-full bg-slate-800 border border-darkborder rounded px-3 py-1.5 text-xs text-slate-100 font-mono">
+              </div>
+              <div>
+                <label class="text-xs text-slate-400 block mb-1">Subject</label>
+                <select v-model="slot.subject" class="w-full bg-slate-800 border border-darkborder rounded px-3 py-1.5 text-xs text-slate-100">
+                  <option v-for="subj in defaultSubjects" :key="subj" :value="subj">{{ subj }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs text-slate-400 block mb-1">Slot Title</label>
+                <input v-model="slot.title" class="w-full bg-slate-800 border border-darkborder rounded px-3 py-1.5 text-xs text-slate-100">
+              </div>
+            </div>
+          </div>
+          <p class="text-xs text-slate-500 italic">Schedule changes save automatically to your local browser storage.</p>
+        </div>
+      </div>
+
+      <!-- ==================== 3. STUDY TIMER TAB ==================== -->
+      <div v-if="currentTab === 'timer'" class="max-w-2xl mx-auto space-y-6">
+        <div class="p-8 rounded-3xl bg-darkcard border border-darkborder shadow-2xl text-center space-y-6">
+          
+          <!-- Mode Switcher -->
+          <div class="inline-flex bg-slate-900 p-1.5 rounded-2xl border border-darkborder gap-1">
+            <button @click="timer.mode = 'stopwatch'" :class="timer.mode === 'stopwatch' ? 'bg-accent-600 text-white' : 'text-slate-400'" class="px-4 py-2 rounded-xl text-xs font-bold transition">Stopwatch</button>
+            <button @click="timer.mode = 'countdown'" :class="timer.mode === 'countdown' ? 'bg-accent-600 text-white' : 'text-slate-400'" class="px-4 py-2 rounded-xl text-xs font-bold transition">Countdown</button>
+            <button @click="timer.mode = 'pomodoro'" :class="timer.mode === 'pomodoro' ? 'bg-accent-600 text-white' : 'text-slate-400'" class="px-4 py-2 rounded-xl text-xs font-bold transition">Pomodoro (25/5)</button>
+          </div>
+
+          <!-- Subject & Task Association -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+            <div>
+              <label class="text-xs text-slate-400 block mb-1 font-medium">Select Subject</label>
+              <select v-model="timer.subject" class="w-full bg-slate-900 border border-darkborder rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-accent-500">
+                <option v-for="subj in defaultSubjects" :key="subj" :value="subj">{{ subj }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 block mb-1 font-medium">Task / Topic Description</label>
+              <input v-model="timer.taskName" placeholder="e.g. LeetCode Mediums / Spring Security" class="w-full bg-slate-900 border border-darkborder rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-accent-500">
+            </div>
+          </div>
+
+          <!-- Timer Clock Display -->
+          <div class="py-8 bg-slate-950/80 rounded-2xl border border-darkborder/80">
+            <span class="text-6xl md:text-7xl font-extrabold font-mono text-emerald-400 tracking-wider">
+              {{ formatTime(timer.seconds) }}
+            </span>
+            <p v-if="timer.mode === 'pomodoro'" class="text-xs font-semibold text-indigo-400 uppercase tracking-widest mt-3">
+              Phase: {{ timer.pomodoroPhase }} (Session {{ timer.pomodoroCount }}/4)
+            </p>
+          </div>
+
+          <!-- Timer Control Buttons -->
+          <div class="flex items-center justify-center gap-4">
+            <button v-if="!timer.running" @click="startTimer()" class="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-lg shadow-emerald-600/30 transition flex items-center gap-2">
+              <i data-lucide="play" class="w-5 h-5"></i> Start Session
+            </button>
+            <button v-else @click="pauseTimer()" class="px-8 py-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-2xl shadow-lg shadow-amber-600/30 transition flex items-center gap-2">
+              <i data-lucide="pause" class="w-5 h-5"></i> Pause
+            </button>
+            <button @click="stopTimer()" class="px-6 py-3.5 bg-rose-600/90 hover:bg-rose-500 text-white font-bold rounded-2xl shadow-lg shadow-rose-600/20 transition flex items-center gap-2">
+              <i data-lucide="square" class="w-5 h-5"></i> Finish & Save
+            </button>
+            <button @click="resetTimer()" class="px-4 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-2xl transition">
+              Reset
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ==================== 4. DSA TRACKER TAB ==================== -->
+      <div v-if="currentTab === 'dsa'" class="space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-100">DSA Mastery Hub</h2>
+            <p class="text-sm text-slate-400">Strict placement structure: LearnYard + LeetCode + Codeforces + Unfamiliar Review</p>
+          </div>
+        </div>
+
+        <!-- DSA Sub-Tabs -->
+        <div class="flex gap-2 border-b border-darkborder pb-3">
+          <button @click="dsaSubTab = 'leetcode'" :class="dsaSubTab === 'leetcode' ? 'text-accent-500 border-b-2 border-accent-500 font-bold' : 'text-slate-400'" class="px-3 py-1.5 text-sm transition">LeetCode Log</button>
+          <button @click="dsaSubTab = 'unfamiliar'" :class="dsaSubTab === 'unfamiliar' ? 'text-accent-500 border-b-2 border-accent-500 font-bold' : 'text-slate-400'" class="px-3 py-1.5 text-sm transition">Unfamiliar Problem Bank</button>
+          <button @click="dsaSubTab = 'learnyard'" :class="dsaSubTab === 'learnyard' ? 'text-accent-500 border-b-2 border-accent-500 font-bold' : 'text-slate-400'" class="px-3 py-1.5 text-sm transition">LearnYard Topics</button>
+        </div>
+
+        <!-- LeetCode Logger -->
+        <div v-if="dsaSubTab === 'leetcode'" class="space-y-6">
+          <div class="p-5 rounded-2xl bg-darkcard border border-darkborder space-y-4">
+            <h3 class="font-bold text-base text-slate-100">Log Solved Problem</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <input v-model="newLeetcode.num" placeholder="Problem #" class="bg-slate-900 border border-darkborder rounded-lg px-3 py-2 text-xs text-slate-100">
+              <input v-model="newLeetcode.title" placeholder="Problem Title" class="bg-slate-900 border border-darkborder rounded-lg px-3 py-2 text-xs text-slate-100">
+              <select v-model="newLeetcode.difficulty" class="bg-slate-900 border border-darkborder rounded-lg px-3 py-2 text-xs text-slate-100">
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+              <input v-model="newLeetcode.pattern" placeholder="Pattern (e.g. Sliding Window)" class="bg-slate-900 border border-darkborder rounded-lg px-3 py-2 text-xs text-slate-100">
+            </div>
+            <button @click="addLeetcodeProblem()" class="px-4 py-2 bg-accent-600 hover:bg-accent-500 text-white rounded-lg text-xs font-semibold transition">Add Problem Record</button>
+          </div>
+
+          <div class="rounded-2xl bg-darkcard border border-darkborder overflow-hidden">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-900 text-slate-400 uppercase font-mono border-b border-darkborder">
+                <tr>
+                  <th class="p-3">#</th>
+                  <th class="p-3">Problem Name</th>
+                  <th class="p-3">Difficulty</th>
+                  <th class="p-3">Pattern</th>
+                  <th class="p-3">Date</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-darkborder/60">
+                <tr v-for="prob in dsa.leetcode" :key="prob.id" class="hover:bg-slate-800/40">
+                  <td class="p-3 font-mono text-slate-400">{{ prob.num }}</td>
+                  <td class="p-3 font-semibold text-slate-200">{{ prob.title }}</td>
+                  <td class="p-3">
+                    <span :class="{'text-emerald-400': prob.difficulty==='Easy', 'text-amber-400': prob.difficulty==='Medium', 'text-rose-400': prob.difficulty==='Hard'}" class="font-bold">
+                      {{ prob.difficulty }}
+                    </span>
+                  </td>
+                  <td class="p-3"><span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300">{{ prob.pattern }}</span></td>
+                  <td class="p-3 text-slate-500 font-mono">{{ prob.date }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Unfamiliar Problems Bank -->
+        <div v-if="dsaSubTab === 'unfamiliar'" class="space-y-4">
+          <div class="p-5 rounded-2xl bg-darkcard border border-darkborder space-y-4">
+            <h3 class="font-bold text-base text-slate-100">Record Unfamiliar / Interview Review Problem</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input v-model="newUnfamiliar.title" placeholder="Problem Name" class="bg-slate-900 border border-darkborder rounded-lg px-3 py-2 text-xs text-slate-100">
+              <input v-model="newUnfamiliar.pattern" placeholder="Key Insight / Trick" class="bg-slate-900 border border-darkborder rounded-lg px-3 py-2 text-xs text-slate-100">
+              <input v-model="newUnfamiliar.reviewDate" type="date" class="bg-slate-900 border border-darkborder rounded-lg px-3 py-2 text-xs text-slate-100">
+            </div>
+            <button @click="addUnfamiliarProblem()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition">Save for Revision</button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div v-for="item in dsa.unfamiliar" :key="item.id" class="p-4 rounded-xl bg-darkcard border border-darkborder space-y-2">
+              <div class="flex justify-between items-start">
+                <h4 class="font-semibold text-slate-200 text-sm">{{ item.title }}</h4>
+                <span class="text-xs font-mono text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded">Review: {{ item.reviewDate }}</span>
+              </div>
+              <p class="text-xs text-slate-400">💡 <span class="text-slate-300 font-medium">Pattern:</span> {{ item.pattern }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 5. JAVA TRACKER TAB ==================== -->
+      <div v-if="currentTab === 'java'" class="space-y-6">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-100">Java Backend Foundations</h2>
+          <p class="text-sm text-slate-400">Master core OOP and concurrency for high-tier technical interviews.</p>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-darkcard border border-darkborder space-y-4">
+          <h3 class="font-bold text-lg text-slate-100 border-b border-darkborder pb-2">Core OOP & Language Concepts</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div v-for="topic in javaTopics" :key="topic.name" class="p-3.5 rounded-xl bg-slate-900 border border-darkborder flex items-center justify-between">
+              <span class="text-xs font-medium text-slate-200">{{ topic.name }}</span>
+              <select v-model="topic.status" :class="{'text-emerald-400': topic.status==='Completed', 'text-amber-400': topic.status==='In Progress', 'text-slate-500': topic.status==='Not Started'}" class="bg-slate-800 border border-darkborder rounded px-2 py-1 text-xs font-bold">
+                <option value="Not Started">Not Started</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 6. BACKEND ROADMAP TAB ==================== -->
+      <div v-if="currentTab === 'backend'" class="space-y-6">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-100">Backend Engineering Roadmap</h2>
+          <p class="text-sm text-slate-400">Primary Resource: K. Srinivas Rao — Backend from First Principles</p>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-darkcard border border-darkborder space-y-6">
+          <div class="flex flex-wrap items-center gap-2">
+            <span v-for="(step, idx) in backendRoadmap" :key="step" class="flex items-center gap-2">
+              <span class="px-3 py-1.5 rounded-xl bg-slate-900 border border-darkborder text-xs font-mono font-semibold text-emerald-400">{{ step }}</span>
+              <span v-if="idx < backendRoadmap.length - 1" class="text-slate-600">→</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 7. PROJECTS TAB (All 4 Portfolio Projects) ==================== -->
+      <div v-if="currentTab === 'projects'" class="space-y-6">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-100">Target ₹20–30 LPA Portfolio Projects</h2>
+          <p class="text-sm text-slate-400">4 system-level projects built deeply to demonstrate concurrency, fault tolerance, distributed systems, and AI integration.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div v-for="proj in projects" :key="proj.id" class="p-6 rounded-2xl bg-darkcard border border-darkborder space-y-4 flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex justify-between items-start">
+                <span class="text-2xl">{{ proj.icon }}</span>
+                <span class="px-2.5 py-1 rounded-full bg-accent-600/10 text-accent-400 border border-accent-500/20 text-xs font-bold">{{ proj.status }}</span>
+              </div>
+              <h3 class="font-bold text-lg text-slate-100">{{ proj.title }}</h3>
+              <p class="text-xs text-slate-400 leading-relaxed">{{ proj.desc }}</p>
+              
+              <!-- Key Concepts / Skills -->
+              <div class="flex flex-wrap gap-1.5 pt-2">
+                <span v-for="skill in proj.skills" :key="skill" class="px-2 py-0.5 rounded bg-slate-900 border border-darkborder text-[10px] font-mono text-emerald-400">
+                  {{ skill }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Checklist Progress -->
+            <div class="space-y-2 pt-4 border-t border-darkborder">
+              <div class="flex justify-between text-xs font-medium">
+                <span class="text-slate-400">Milestone Features</span>
+                <span class="text-slate-300 font-mono">{{ calcProjectProgress(proj) }}%</span>
+              </div>
+              <div class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                <label v-for="task in proj.checklist" :key="task.name" class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                  <input type="checkbox" v-model="task.done" class="rounded bg-slate-900 border-darkborder text-accent-600 focus:ring-0">
+                  <span :class="{'line-through text-slate-500': task.done}">{{ task.name }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 8. TASK MANAGEMENT TAB ==================== -->
+      <div v-if="currentTab === 'tasks'" class="space-y-6">
+        <div class="p-5 rounded-2xl bg-darkcard border border-darkborder space-y-4">
+          <h3 class="font-bold text-base text-slate-100">Add Actionable Study Task</h3>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <input v-model="newTask.text" placeholder="Task title..." class="bg-slate-900 border border-darkborder rounded-lg px-3 py-2 text-xs text-slate-100">
+            <select v-model="newTask.subject" class="bg-slate-900 border border-darkborder rounded-lg px-3 py-2 text-xs text-slate-100">
+              <option v-for="subj in defaultSubjects" :key="subj" :value="subj">{{ subj }}</option>
+            </select>
+            <input v-model.number="newTask.plannedMins" type="number" placeholder="Est. Mins" class="bg-slate-900 border border-darkborder rounded-lg px-3 py-2 text-xs text-slate-100">
+            <button @click="addTask()" class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold py-2 transition">Add Task</button>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div v-for="task in todayTasks" :key="task.id" class="p-4 rounded-xl bg-darkcard border border-darkborder flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" v-model="task.completed" class="w-4 h-4 rounded bg-slate-900 border-darkborder text-emerald-500">
+              <div>
+                <h4 :class="{'line-through text-slate-500': task.completed}" class="font-medium text-slate-200 text-sm">{{ task.text }}</h4>
+                <div class="flex gap-2 text-xs text-slate-400 mt-0.5">
+                  <span class="text-accent-400 font-medium">{{ task.subject }}</span>
+                  <span>• Planned: {{ task.plannedMins }}m</span>
+                  <span>• Actual: {{ task.actualMins || 0 }}m</span>
+                </div>
+              </div>
+            </div>
+            <button @click="deleteTask(task.id)" class="text-slate-500 hover:text-rose-400 p-1">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 9. SETTINGS TAB ==================== -->
+      <div v-if="currentTab === 'settings'" class="max-w-xl space-y-6">
+        <div class="p-6 rounded-2xl bg-darkcard border border-darkborder space-y-4">
+          <h3 class="font-bold text-lg text-slate-100">Data & Persistence Controls</h3>
+          <p class="text-xs text-slate-400">All data is saved locally in your browser storage. You can export a JSON backup anytime.</p>
+          <div class="flex gap-3">
+            <button @click="exportData()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition">Export Backup (JSON)</button>
+            <button @click="resetData()" class="px-4 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 rounded-lg text-xs font-semibold transition">Reset App Data</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Vue Application Logic -->
+  <script>
+    const { createApp, ref, computed, onMounted, watch } = Vue;
+
+    createApp({
+      setup() {
+        // App Navigation & UI State
+        const currentTab = ref('dashboard');
+        const dsaSubTab = ref('leetcode');
+        const scheduleTab = ref('college');
+        const dayScheduleType = ref('college');
+        const mobileMenuOpen = ref(false);
+
+        const navItems = [
+          { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
+          { id: 'schedule', label: 'Daily Schedule', icon: 'calendar-days' },
+          { id: 'timer', label: 'Study Timer', icon: 'timer' },
+          { id: 'dsa', label: 'DSA Mastery', icon: 'code-2' },
+          { id: 'java', label: 'Java Backend', icon: 'coffee' },
+          { id: 'backend', label: 'Backend Roadmap', icon: 'server' },
+          { id: 'projects', label: 'Target Projects', icon: 'folder-git-2' },
+          { id: 'tasks', label: 'Tasks', icon: 'check-square' },
+          { id: 'settings', label: 'Settings', icon: 'settings' }
+        ];
+
+        const defaultSubjects = ['DSA', 'Java', 'Backend', 'SQL', 'DBMS', 'OS', 'Computer Networks', 'Aptitude', 'Git/GitHub', 'Revision'];
+
+        // Storage Key
+        const STORAGE_KEY = 'placement_study_os_v1';
+
+        // Timer State
+        const timer = ref({
+          running: false,
+          mode: 'stopwatch',
+          seconds: 0,
+          subject: 'DSA',
+          taskName: 'LeetCode Practice',
+          intervalId: null,
+          pomodoroPhase: 'study',
+          pomodoroCount: 1
+        });
+
+        // Today's Date String
+        const currentDateFormatted = computed(() => {
+          return new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+        });
+        const todayKey = new Date().toISOString().split('T')[0];
+
+        // Schedules
+        const collegeSchedule = ref([
+          { id: 1, time: '1:30 PM - 4:30 PM', subject: 'DSA', title: 'DSA Deep Dive (3 hours)', subtasks: ['30m LearnYard', '90m LeetCode', '30m Codeforces', '30m Unfamiliar Interview Review'] },
+          { id: 2, time: '5:30 PM - 6:30 PM', subject: 'Java', title: 'Java Core & OOP Concepts', subtasks: ['OOP Principles', 'Coding Practice'] },
+          { id: 3, time: '6:30 PM - 7:30 PM', subject: 'Backend', title: 'Backend from First Principles', subtasks: ['K. Srinivas Rao Playlist', 'Architecture'] },
+          { id: 4, time: '8:30 PM - 9:30 PM', subject: 'SQL', title: 'SQL & Database Queries', subtasks: ['Joins', 'Indexes', 'Subqueries'] }
+        ]);
+
+        const holidaySchedule = ref([
+          { id: 1, time: '10:00 AM - 1:00 PM', subject: 'DSA', title: 'DSA Block', subtasks: ['Problem Solving & Patterns'] },
+          { id: 2, time: '3:00 PM - 5:00 PM', subject: 'Java', title: 'Java Deep Dive', subtasks: ['Collections & Multithreading'] },
+          { id: 3, time: '6:00 PM - 7:00 PM', subject: 'Backend', title: 'Backend Systems', subtasks: ['Spring Boot / APIs'] },
+          { id: 4, time: '7:00 PM - 8:00 PM', subject: 'SQL', title: 'SQL & DBMS', subtasks: ['Transactions & Isolation'] }
+        ]);
+
+        const activeScheduleSlots = computed(() => {
+          return dayScheduleType.value === 'college' ? collegeSchedule.value : holidaySchedule.value;
+        });
+
+        // Study Sessions Log
+        const sessions = ref([]);
+
+        // DSA Data
+        const dsa = ref({
+          leetcode: [
+            { id: 1, num: '15', title: '3Sum', difficulty: 'Medium', pattern: 'Two Pointers', date: todayKey }
+          ],
+          unfamiliar: [
+            { id: 1, title: 'LRU Cache with TTL', pattern: 'Doubly Linked List + HashMap + Min Heap', reviewDate: todayKey }
+          ]
+        });
+
+        const newLeetcode = ref({ num: '', title: '', difficulty: 'Medium', pattern: '' });
+        const newUnfamiliar = ref({ title: '', pattern: '', reviewDate: todayKey });
+
+        // Java Topics
+        const javaTopics = ref([
+          { name: 'Classes and Objects', status: 'Completed' },
+          { name: 'Constructors, this, super', status: 'Completed' },
+          { name: 'Encapsulation & Access Modifiers', status: 'Completed' },
+          { name: 'Inheritance & Polymorphism', status: 'In Progress' },
+          { name: 'Abstraction & Interfaces', status: 'In Progress' },
+          { name: 'Collections Framework', status: 'Not Started' },
+          { name: 'Multithreading & Concurrency', status: 'Not Started' }
+        ]);
+
+        // Backend Roadmap
+        const backendRoadmap = ['Java', 'HTTP', 'REST', 'Spring Boot', 'PostgreSQL', 'JPA/Hibernate', 'Redis', 'Docker', 'CI/CD'];
+
+        // 4 Placement Portfolio Projects
+        const projects = ref([
+          {
+            id: 1, icon: '🎟️', title: 'High-Concurrency Ticket Reservation Engine',
+            desc: 'Handles ultra-high throughput seat bookings under race conditions with zero double-bookings.',
+            status: 'In Progress', skills: ['Spring Boot', 'PostgreSQL', 'Redlock', 'Pessimistic Locking'],
+            checklist: [
+              { name: 'Database schema with optimistic/pessimistic locking', done: true },
+              { name: 'Distributed Redlock integration with Redis', done: false },
+              { name: 'k6 load testing simulation (2000+ RPS)', done: false }
+            ]
+          },
+          {
+            id: 2, icon: '🔔', title: 'Resilient Webhook Platform',
+            desc: 'Guaranteed at-least-once payload delivery platform with exponential backoff and DLQs.',
+            status: 'In Progress', skills: ['Redis', 'Idempotency', 'DLQ', 'Outbox Pattern'],
+            checklist: [
+              { name: 'Idempotent delivery engine with unique keys', done: true },
+              { name: 'Dead Letter Queue (DLQ) retry worker', done: false }
+            ]
+          },
+          {
+            id: 3, icon: '🔗', title: 'Distributed URL Shortener',
+            desc: 'Scalable redirection service with Bloom filters, caching, and token bucket rate-limiting.',
+            status: 'Not Started', skills: ['Base62', 'Bloom Filters', 'Rate Limiting', 'Redis'],
+            checklist: [
+              { name: 'Base62 key generator engine', done: false },
+              { name: 'Token Bucket rate-limiter middleware', done: false }
+            ]
+          },
+          {
+            id: 4, icon: '🤖', title: 'AI-Powered Developer Knowledge Platform',
+            desc: 'RAG-enabled documentation search engine leveraging vector databases and agent workflows.',
+            status: 'Not Started', skills: ['RAG', 'Vector DB', 'MCP Tools', 'Spring Boot AI'],
+            checklist: [
+              { name: 'Document chunking & vector embedding pipeline', done: false },
+              { name: 'Hybrid vector + keyword search integration', done: false }
+            ]
+          }
+        ]);
+
+        // Tasks
+        const tasks = ref([
+          { id: 1, text: 'Solve 2 LeetCode Mediums on Two Pointers', subject: 'DSA', plannedMins: 90, actualMins: 75, completed: true, date: todayKey },
+          { id: 2, text: 'Study Java Interface vs Abstract Class', subject: 'Java', plannedMins: 60, actualMins: 60, completed: true, date: todayKey }
+        ]);
+
+        const newTask = ref({ text: '', subject: 'DSA', plannedMins: 60 });
+
+        // Streak Engine
+        const streak = ref({ current: 4, longest: 12 });
+
+        // Computations
+        const todayTasks = computed(() => tasks.value.filter(t => t.date === todayKey));
+        const completedTasksCount = computed(() => todayTasks.value.filter(t => t.completed).length);
+
+        const todayPlannedMins = computed(() => {
+          return activeScheduleSlots.value.length * 60;
+        });
+
+        const todayActualMins = computed(() => {
+          return sessions.value.filter(s => s.date === todayKey).reduce((acc, curr) => acc + curr.durationMins, 135);
+        });
+
+        const todayCompletionRate = computed(() => {
+          if (!todayPlannedMins.value) return 0;
+          return Math.min(100, Math.round((todayActualMins.value / todayPlannedMins.value) * 100));
+        });
+
+        const weeklyStudyHours = computed(() => (todayActualMins.value / 60 + 18.5).toFixed(1));
+
+        const subjectTimeBreakdown = computed(() => {
+          const res = { 'DSA': 90, 'Java': 60, 'Backend': 45, 'SQL': 30 };
+          sessions.value.forEach(s => {
+            res[s.subject] = (res[s.subject] || 0) + s.durationMins;
+          });
+          return res;
+        });
+
+        // Timer Functions
+        function startTimer() {
+          if (timer.value.running) return;
+          timer.value.running = true;
+          timer.value.intervalId = setInterval(() => {
+            timer.value.seconds++;
+            saveState();
+          }, 1000);
+        }
+
+        function pauseTimer() {
+          timer.value.running = false;
+          if (timer.value.intervalId) clearInterval(timer.value.intervalId);
+          saveState();
+        }
+
+        function stopTimer() {
+          pauseTimer();
+          if (timer.value.seconds > 10) {
+            const durationMins = Math.round(timer.value.seconds / 60);
+            sessions.value.push({
+              id: Date.now(),
+              date: todayKey,
+              subject: timer.value.subject,
+              task: timer.value.taskName || 'Study Session',
+              durationMins: durationMins
+            });
+            alert(`Saved study session: ${durationMins} minutes recorded for ${timer.value.subject}!`);
+          }
+          timer.value.seconds = 0;
+          saveState();
+        }
+
+        function resetTimer() {
+          pauseTimer();
+          timer.value.seconds = 0;
+          saveState();
+        }
+
+        function startTimerForSlot(slot) {
+          timer.value.subject = slot.subject;
+          timer.value.taskName = slot.title;
+          currentTab.value = 'timer';
+          startTimer();
+        }
+
+        // Add Methods
+        function addLeetcodeProblem() {
+          if (!newLeetcode.value.title) return;
+          dsa.value.leetcode.unshift({ ...newLeetcode.value, id: Date.now(), date: todayKey });
+          newLeetcode.value = { num: '', title: '', difficulty: 'Medium', pattern: '' };
+          saveState();
+        }
+
+        function addUnfamiliarProblem() {
+          if (!newUnfamiliar.value.title) return;
+          dsa.value.unfamiliar.unshift({ ...newUnfamiliar.value, id: Date.now() });
+          newUnfamiliar.value = { title: '', pattern: '', reviewDate: todayKey };
+          saveState();
+        }
+
+        function addTask() {
+          if (!newTask.value.text) return;
+          tasks.value.push({
+            id: Date.now(),
+            text: newTask.value.text,
+            subject: newTask.value.subject,
+            plannedMins: newTask.value.plannedMins || 60,
+            actualMins: 0,
+            completed: false,
+            date: todayKey
+          });
+          newTask.value = { text: '', subject: 'DSA', plannedMins: 60 };
+          saveState();
+        }
+
+        function deleteTask(id) {
+          tasks.value = tasks.value.filter(t => t.id !== id);
+          saveState();
+        }
+
+        function calcProjectProgress(proj) {
+          if (!proj.checklist || !proj.checklist.length) return 0;
+          const done = proj.checklist.filter(c => c.done).length;
+          return Math.round((done / proj.checklist.length) * 100);
+        }
+
+        // Formatters
+        function formatTime(sec) {
+          const m = Math.floor(sec / 60);
+          const s = sec % 60;
+          return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function formatHoursMins(mins) {
+          const h = Math.floor(mins / 60);
+          const m = mins % 60;
+          return h > 0 ? `${h}h ${m}m` : `${m}m`;
+        }
+
+        // Persistence Engine
+        function saveState() {
+          const payload = {
+            timerSeconds: timer.value.seconds,
+            timerSubject: timer.value.subject,
+            timerTask: timer.value.taskName,
+            sessions: sessions.value,
+            dsa: dsa.value,
+            javaTopics: javaTopics.value,
+            projects: projects.value,
+            tasks: tasks.value,
+            collegeSchedule: collegeSchedule.value,
+            holidaySchedule: holidaySchedule.value
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        }
+
+        function loadState() {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            try {
+              const data = JSON.parse(raw);
+              if (data.timerSeconds) timer.value.seconds = data.timerSeconds;
+              if (data.timerSubject) timer.value.subject = data.timerSubject;
+              if (data.timerTask) timer.value.taskName = data.timerTask;
+              if (data.sessions) sessions.value = data.sessions;
+              if (data.dsa) dsa.value = data.dsa;
+              if (data.javaTopics) javaTopics.value = data.javaTopics;
+              if (data.projects) projects.value = data.projects;
+              if (data.tasks) tasks.value = data.tasks;
+              if (data.collegeSchedule) collegeSchedule.value = data.collegeSchedule;
+              if (data.holidaySchedule) holidaySchedule.value = data.holidaySchedule;
+            } catch(e) { console.error('Failed restoring state', e); }
+          }
+        }
+
+        function exportData() {
+          const blob = new Blob([localStorage.getItem(STORAGE_KEY) || '{}'], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `Placement_OS_Backup_${todayKey}.json`;
+          a.click();
+        }
+
+        function resetData() {
+          if (confirm('Reset all saved study state?')) {
+            localStorage.removeItem(STORAGE_KEY);
+            location.reload();
+          }
+        }
+
+        onMounted(() => {
+          loadState();
+          lucide.createIcons();
+        });
+
+        watch(currentTab, () => {
+          setTimeout(() => lucide.createIcons(), 50);
+        });
+
+        return {
+          currentTab, dsaSubTab, scheduleTab, dayScheduleType, mobileMenuOpen, navItems, defaultSubjects,
+          timer, currentDateFormatted, collegeSchedule, holidaySchedule, activeScheduleSlots,
+          sessions, dsa, newLeetcode, newUnfamiliar, javaTopics, backendRoadmap, projects, tasks, newTask, streak,
+          todayTasks, completedTasksCount, todayPlannedMins, todayActualMins, todayCompletionRate,
+          weeklyStudyHours, subjectTimeBreakdown,
+          startTimer, pauseTimer, stopTimer, resetTimer, startTimerForSlot,
+          addLeetcodeProblem, addUnfamiliarProblem, addTask, deleteTask, calcProjectProgress,
+          formatTime, formatHoursMins, exportData, resetData
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
