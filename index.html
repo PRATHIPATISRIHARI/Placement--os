@@ -1,3 +1,450 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer Study OS — Engineering Placement Operating System</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            surface: {
+              900: '#121214',
+              950: '#09090b',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 & Babel CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #09090b; color: #f4f4f5; }
+    .mono { font-family: 'Fira Code', monospace; }
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #09090b; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+  </style>
+</head>
+<body class="bg-surface-950 text-zinc-100 antialiased min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // --- DEFAULT INITIAL STATE DATA ---
+    const DEFAULT_CONFIG = {
+      studentName: 'Candidate',
+      graduationYear: 2026,
+      targetLPA: '₹25+ LPA',
+      dailyTargetHours: 6,
+      leetCodeUsername: 'dev_candidate',
+      codeforcesHandle: 'candidate_cf',
+      isSetupComplete: true
+    };
+
+    const DEFAULT_SCHEDULE = [
+      { id: 1, subject: 'Java Core', task: 'Garbage Collection Algorithms & Memory Leaks', mins: 60, status: 'Completed', priority: 'High' },
+      { id: 2, subject: 'DSA', task: 'Dynamic Programming: 2D Grid Problems (5 Problems)', mins: 120, status: 'In Progress', priority: 'High' },
+      { id: 3, subject: 'System Design', task: 'Design a Scalable Rate Limiter (Token Bucket vs Leaky Bucket)', mins: 90, status: 'Pending', priority: 'Medium' },
+      { id: 4, subject: 'CS Fundamentals', task: 'DBMS Indexing: B-Trees & B+ Trees internals', mins: 45, status: 'Pending', priority: 'Low' }
+    ];
+
+    const DEFAULT_JAVA_TOPICS = [
+      { id: 'j1', name: 'JVM Architecture & Memory Areas', master: 85, category: 'Core' },
+      { id: 'j2', name: 'Multithreading & Concurrency Utilities', master: 70, category: 'Advanced' },
+      { id: 'j3', name: 'Java Collections Framework Internals', master: 90, category: 'Core' },
+      { id: 'j4', name: 'Garbage Collectors (G1, ZGC, Parallel)', master: 65, category: 'JVM' },
+      { id: 'j5', name: 'Java 8+ Streams & Lambdas Performance', master: 80, category: 'Core' }
+    ];
+
+    const DEFAULT_ROADMAP = [
+      { id: 'p1', phase: 'Phase 1', title: 'Data Structures & Core Java', timeline: 'Aug 1 - Aug 20', status: 'In Progress', progress: 75 },
+      { id: 'p2', phase: 'Phase 2', title: 'Advanced Algorithms & System Design', timeline: 'Aug 21 - Sep 15', status: 'Pending', progress: 20 },
+      { id: 'p3', phase: 'Phase 3', title: 'Fullstack Capstone & Mock Interviews', timeline: 'Sep 16 - Oct 10', status: 'Pending', progress: 0 }
+    ];
+
+    const DEFAULT_PROJECTS = [
+      {
+        id: 'proj1',
+        title: 'Distributed In-Memory Cache',
+        tech: ['Java', 'Netty', 'Consistent Hashing'],
+        status: 'In Progress',
+        desc: 'Redis-like key-value store supporting LRU eviction, replication, and binary protocol.',
+        architectureNotes: 'Uses Netty for event-driven I/O, custom hash ring for consistent hashing node distribution.'
+      },
+      {
+        id: 'proj2',
+        title: 'Real-time Task Scheduler Engine',
+        tech: ['Java', 'Spring Boot', 'Kafka', 'PostgreSQL'],
+        status: 'Planned',
+        desc: 'High-throughput delayed job execution service supporting cron syntax and retry policies.',
+        architectureNotes: 'Distributed queue backed by Kafka partitions and optimistic DB locking.'
+      }
+    ];
+
+    const DEFAULT_PLACEMENTS = [
+      { id: 'pl1', company: 'Atlassian', role: 'Software Engineer - Backend', pkg: '₹34 LPA', status: 'OA', nextStep: 'Online Assessment on Aug 18', notes: 'Focus on Graphs and System Architecture.' },
+      { id: 'pl2', company: 'Amazon', role: 'SDE-1', pkg: '₹28 LPA', status: 'Interviewing', nextStep: 'Technical Round 2 on Aug 22', notes: 'Review Leadership Principles & Tree DP.' },
+      { id: 'pl3', company: 'DE Shaw', role: 'Member Technical Staff', pkg: '₹38 LPA', status: 'Applied', nextStep: 'Awaiting Application Screening', notes: 'Strong OS and C++/Java fundamentals required.' }
+    ];
+
+    const DEFAULT_SESSIONS = [
+      { id: 101, date: '2026-08-14', subject: 'DSA', actualMins: 150, note: 'Solved 4 Hard Graph problems.' },
+      { id: 102, date: '2026-08-15', subject: 'Java Core', actualMins: 90, note: 'Reviewed Concurrency primitives.' }
+    ];
+
+    const DEFAULT_NOTES = [
+      {
+        id: 1,
+        title: 'ConcurrentHashMap vs Hashtable',
+        subject: 'Java',
+        date: '2026-08-12',
+        content: `ConcurrentHashMap uses bucket-level locking (Segment locking in Java 7, CAS + synchronized on bin head in Java 8+).\n\nKey differences:\n- ConcurrentHashMap does NOT lock the entire map on read.\n- Hashtable locks the entire map for every operation using synchronized methods.\n- Null keys/values are prohibited in ConcurrentHashMap to avoid ambiguity in multithreaded environments.`
+      },
+      {
+        id: 2,
+        title: 'CAP Theorem & PACELC Tradeoffs',
+        subject: 'System Design',
+        date: '2026-08-14',
+        content: `In a network partition (P):\n- Choice between Availability (A) and Consistency (C).\n\nElse (E) during normal operations:\n- Choice between Latency (L) and Consistency (C).\n\nExamples:\n- DynamoDB/Cassandra: PA/EL\n- MongoDB/HBase: PC/EC`
+      }
+    ];
+
+    const DEFAULT_LEARNYARD = [
+      { id: 'ly1', topic: 'Graphs: Dijkstra & Bellman-Ford Algorithms', category: 'DSA', completed: true },
+      { id: 'ly2', topic: 'Dynamic Programming: Digit DP Patterns', category: 'DSA', completed: false },
+      { id: 'ly3', topic: 'OS: Thread Synchronization & Deadlock Prevention', category: 'CS Fundamentals', completed: true },
+      { id: 'ly4', topic: 'System Design: Database Sharding & Partitioning', category: 'System Design', completed: false }
+    ];
+
+    // --- MAIN APP COMPONENT ---
+    function App() {
+      // LocalStorage Persistence Hook helper
+      const usePersistedState = (key, defaultVal) => {
+        const [state, setState] = useState(() => {
+          try {
+            const stored = localStorage.getItem(key);
+            return stored ? JSON.parse(stored) : defaultVal;
+          } catch (e) {
+            return defaultVal;
+          }
+        });
+        useEffect(() => {
+          try {
+            localStorage.setItem(key, JSON.stringify(state));
+          } catch (e) {
+            console.error("Storage write error", e);
+          }
+        }, [key, state]);
+        return [state, setState];
+      };
+
+      const [config, setConfig] = usePersistedState('os_config', DEFAULT_CONFIG);
+      const [todaySchedule, setTodaySchedule] = usePersistedState('os_schedule', DEFAULT_SCHEDULE);
+      const [javaTopics, setJavaTopics] = usePersistedState('os_java_topics', DEFAULT_JAVA_TOPICS);
+      const [roadmapPhases, setRoadmapPhases] = usePersistedState('os_roadmap', DEFAULT_ROADMAP);
+      const [projects, setProjects] = usePersistedState('os_projects', DEFAULT_PROJECTS);
+      const [placements, setPlacements] = usePersistedState('os_placements', DEFAULT_PLACEMENTS);
+      const [sessions, setSessions] = usePersistedState('os_sessions', DEFAULT_SESSIONS);
+      const [notes, setNotes] = usePersistedState('os_notes', DEFAULT_NOTES);
+      const [learnYard, setLearnYard] = usePersistedState('os_learnyard', DEFAULT_LEARNYARD);
+
+      const [activeTab, setActiveTab] = useState('dashboard');
+      const [rescheduleTask, setRescheduleTask] = useState(null);
+      const [showLogModal, setShowLogModal] = useState(false);
+
+      // Readiness Metrics Calculation
+      const readinessMetric = useMemo(() => {
+        const avgJava = javaTopics.reduce((acc, t) => acc + t.master, 0) / (javaTopics.length || 1);
+        const lyProgress = (learnYard.filter(i => i.completed).length / (learnYard.length || 1)) * 100;
+        const totalLoggedMins = sessions.reduce((acc, s) => acc + s.actualMins, 0);
+        const overallReadiness = Math.round((avgJava * 0.4) + (lyProgress * 0.4) + Math.min(20, (totalLoggedMins / 60) * 0.5));
+        return { avgJava: Math.round(avgJava), lyProgress: Math.round(lyProgress), overallReadiness };
+      }, [javaTopics, learnYard, sessions]);
+
+      if (!config.isSetupComplete) {
+        return <FirstRunWizard config={config} onComplete={(updatedConfig) => setConfig({ ...updatedConfig, isSetupComplete: true })} />;
+      }
+
+      return (
+        <div className="flex flex-col md:flex-row min-h-screen bg-surface-950 text-zinc-100 font-sans">
+          {/* SIDEBAR NAVIGATION */}
+          <aside className="w-full md:w-64 bg-surface-900 border-r border-zinc-800 p-4 flex flex-col justify-between shrink-0">
+            <div className="space-y-6">
+              {/* Header Profile Brand */}
+              <div className="flex items-center gap-3 border-b border-zinc-800/80 pb-4">
+                <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center font-mono font-bold text-white text-lg">
+                  {config.studentName.charAt(0)}
+                </div>
+                <div>
+                  <h2 className="font-bold text-sm tracking-wide text-white">{config.studentName}</h2>
+                  <p className="text-[11px] font-mono text-zinc-400">Target: {config.targetLPA} ({config.graduationYear})</p>
+                </div>
+              </div>
+
+              {/* Navigation Links */}
+              <nav className="space-y-1 text-xs">
+                {[
+                  { id: 'dashboard', label: 'Dashboard', icon: '⚡' },
+                  { id: 'roadmap', label: 'Preparation Roadmap', icon: '🗺️' },
+                  { id: 'dsa', label: 'DSA & Java Core', icon: '☕' },
+                  { id: 'learnyard', label: 'LearnYard Track', icon: '🎯' },
+                  { id: 'projects', label: 'System Design & Projects', icon: '🏗️' },
+                  { id: 'placements', label: 'Placement Pipeline', icon: '💼' },
+                  { id: 'analytics', label: 'Study Analytics', icon: '📊' },
+                  { id: 'calendar', label: 'Calendar View', icon: '📅' },
+                  { id: 'notes', label: 'Revision Notes', icon: '📝' },
+                  { id: 'settings', label: 'OS Settings', icon: '⚙️' }
+                ].map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md font-medium transition ${
+                      activeTab === item.id 
+                        ? 'bg-blue-600/10 text-blue-400 border-r-2 border-blue-500 font-semibold' 
+                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                    }`}
+                  >
+                    <span>{item.icon}</span>
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            {/* Daily Target Progress Footer */}
+            <div className="border-t border-zinc-800 pt-4 space-y-2">
+              <div className="flex justify-between text-[11px] text-zinc-400 font-mono">
+                <span>Readiness Score</span>
+                <span className="text-emerald-400 font-bold">{readinessMetric.overallReadiness}%</span>
+              </div>
+              <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${readinessMetric.overallReadiness}%` }}></div>
+              </div>
+              <button 
+                onClick={() => setShowLogModal(true)}
+                className="w-full mt-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs rounded transition flex items-center justify-center gap-1.5"
+              >
+                ⏱ Quick Log Session
+              </button>
+            </div>
+          </aside>
+
+          {/* MAIN CONTENT WORKSPACE */}
+          <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+            {activeTab === 'dashboard' && (
+              <DashboardView 
+                config={config} 
+                todaySchedule={todaySchedule} 
+                setTodaySchedule={setTodaySchedule}
+                readinessMetric={readinessMetric}
+                setRescheduleTask={setRescheduleTask}
+                onLogClick={() => setShowLogModal(true)}
+              />
+            )}
+            {activeTab === 'roadmap' && <RoadmapView roadmapPhases={roadmapPhases} setRoadmapPhases={setRoadmapPhases} />}
+            {activeTab === 'dsa' && <DsaJavaView javaTopics={javaTopics} setJavaTopics={setJavaTopics} />}
+            {activeTab === 'learnyard' && <LearnYardView learnYard={learnYard} setLearnYard={setLearnYard} />}
+            {activeTab === 'projects' && <ProjectsView projects={projects} setProjects={setProjects} />}
+            {activeTab === 'placements' && <PlacementView placements={placements} setPlacements={setPlacements} readinessMetric={readinessMetric} />}
+            {activeTab === 'analytics' && <AnalyticsView sessions={sessions} todaySchedule={todaySchedule} learnYard={learnYard} javaTopics={javaTopics} />}
+            {activeTab === 'calendar' && <CalendarView sessions={sessions} />}
+            {activeTab === 'notes' && <NotesView notes={notes} setNotes={setNotes} />}
+            {activeTab === 'settings' && <SettingsView config={config} setConfig={setConfig} setTodaySchedule={setTodaySchedule} setRoadmapPhases={setRoadmapPhases} setProjects={setProjects} />}
+          </main>
+
+          {/* RESCHEDULE MODAL */}
+          {rescheduleTask && (
+            <RescheduleModal 
+              task={rescheduleTask} 
+              onClose={() => setRescheduleTask(null)}
+              onReschedule={(action) => {
+                if (action === 'skip') {
+                  setTodaySchedule(prev => prev.map(t => t.id === rescheduleTask.id ? { ...t, status: 'Skipped' } : t));
+                } else if (action === 'tomorrow' || action === 'delete') {
+                  setTodaySchedule(prev => prev.filter(t => t.id !== rescheduleTask.id));
+                }
+                setRescheduleTask(null);
+              }}
+            />
+          )}
+
+          {/* QUICK LOG SESSION MODAL */}
+          {showLogModal && (
+            <LogSessionModal 
+              onClose={() => setShowLogModal(false)}
+              onSave={(session) => {
+                setSessions(prev => [session, ...prev]);
+                setShowLogModal(false);
+              }}
+            />
+          )}
+        </div>
+      );
+    }
+
+    // --- 1. DASHBOARD VIEW ---
+    function DashboardView({ config, todaySchedule, setTodaySchedule, readinessMetric, setRescheduleTask, onLogClick }) {
+      const toggleTaskStatus = (id) => {
+        setTodaySchedule(prev => prev.map(t => {
+          if (t.id === id) {
+            const nextStatus = t.status === 'Completed' ? 'Pending' : 'Completed';
+            return { ...t, status: nextStatus };
+          }
+          return t;
+        }));
+      };
+
+      const completedCount = todaySchedule.filter(t => t.status === 'Completed').length;
+      const totalMins = todaySchedule.reduce((acc, t) => acc + t.mins, 0);
+      const completedMins = todaySchedule.filter(t => t.status === 'Completed').reduce((acc, t) => acc + t.mins, 0);
+
+      return (
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Top Headline Banner */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-zinc-800 pb-4 gap-4">
+            <div>
+              <h1 className="text-xl font-bold text-white tracking-tight">Placement Command Center</h1>
+              <p className="text-xs text-zinc-400 mt-0.5">Execution dashboard for target <span className="text-emerald-400 font-mono font-semibold">{config.targetLPA}</span> role.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded text-xs font-mono">
+                🔥 14 Day Streak
+              </span>
+              <button onClick={onLogClick} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded">
+                + Log Focus Time
+              </button>
+            </div>
+          </div>
+
+          {/* Key Metric Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="border border-zinc-800 bg-surface-900/60 p-4 rounded-lg">
+              <div className="text-[11px] text-zinc-400 font-mono">Overall Readiness</div>
+              <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">{readinessMetric.overallReadiness}%</div>
+              <div className="text-[10px] text-zinc-500 mt-1">Algorithmic & CS Core metric</div>
+            </div>
+            <div className="border border-zinc-800 bg-surface-900/60 p-4 rounded-lg">
+              <div className="text-[11px] text-zinc-400 font-mono">Today's Focus Target</div>
+              <div className="text-2xl font-bold font-mono text-blue-400 mt-1">{(completedMins / 60).toFixed(1)} / {(totalMins / 60).toFixed(1)} hrs</div>
+              <div className="text-[10px] text-zinc-500 mt-1">{completedCount} of {todaySchedule.length} tasks completed</div>
+            </div>
+            <div className="border border-zinc-800 bg-surface-900/60 p-4 rounded-lg">
+              <div className="text-[11px] text-zinc-400 font-mono">Java Mastery</div>
+              <div className="text-2xl font-bold font-mono text-purple-400 mt-1">{readinessMetric.avgJava}%</div>
+              <div className="text-[10px] text-zinc-500 mt-1">JVM & Multithreading core</div>
+            </div>
+            <div className="border border-zinc-800 bg-surface-900/60 p-4 rounded-lg">
+              <div className="text-[11px] text-zinc-400 font-mono">LearnYard Track</div>
+              <div className="text-2xl font-bold font-mono text-amber-400 mt-1">{readinessMetric.lyProgress}%</div>
+              <div className="text-[10px] text-zinc-500 mt-1">Syllabus coverage</div>
+            </div>
+          </div>
+
+          {/* Today's Execution Queue Table */}
+          <div className="border border-zinc-800 bg-surface-900/40 rounded-lg overflow-hidden">
+            <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>📋</span> Today's Execution Queue
+              </h2>
+              <span className="text-xs text-zinc-400 font-mono">{completedMins} mins completed</span>
+            </div>
+
+            <div className="divide-y divide-zinc-800/60">
+              {todaySchedule.map(task => (
+                <div key={task.id} className="p-4 flex items-center justify-between hover:bg-zinc-900/40 transition">
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => toggleTaskStatus(task.id)}
+                      className={`w-5 h-5 rounded border flex items-center justify-center transition ${
+                        task.status === 'Completed' ? 'bg-emerald-600 border-emerald-500 text-white' : 'border-zinc-700 hover:border-zinc-500'
+                      }`}
+                    >
+                      {task.status === 'Completed' && '✓'}
+                    </button>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-semibold ${task.status === 'Completed' ? 'line-through text-zinc-500' : 'text-zinc-200'}`}>
+                          {task.task}
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[10px] font-mono bg-zinc-800 text-zinc-300 rounded">
+                          {task.subject}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-zinc-500 font-mono mt-0.5">
+                        Duration: {task.mins} mins • Priority: {task.priority}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 text-[10px] font-mono rounded ${
+                      task.status === 'Completed' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' :
+                      task.status === 'In Progress' ? 'bg-blue-950 text-blue-400 border border-blue-800' : 'bg-zinc-800 text-zinc-400'
+                    }`}>
+                      {task.status}
+                    </span>
+                    <button onClick={() => setRescheduleTask(task)} className="text-xs text-zinc-500 hover:text-zinc-300 p-1">
+                      ⚙️
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- 2. ROADMAP VIEW ---
+    function RoadmapView({ roadmapPhases, setRoadmapPhases }) {
+      return (
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="border-b border-zinc-800 pb-4">
+            <h1 className="text-xl font-bold text-white">Placement Preparation Roadmap</h1>
+            <p className="text-xs text-zinc-400 mt-0.5">Structured timeline and milestones for campus and off-campus placements.</p>
+          </div>
+
+          <div className="space-y-4">
+            {roadmapPhases.map((phase) => (
+              <div key={phase.id} className="border border-zinc-800 bg-surface-900/50 rounded-lg p-5 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-blue-950 text-blue-400 text-[10px] font-mono border border-blue-800 rounded">
+                        {phase.phase}
+                      </span>
+                      <h3 className="font-bold text-sm text-zinc-100">{phase.title}</h3>
+                    </div>
+                    <p className="text-xs font-mono text-zinc-400 mt-1">{phase.timeline}</p>
+                  </div>
+                  <span className="text-xs font-mono text-emerald-400 font-semibold">{phase.progress}% Completed</span>
+                </div>
+
+                <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+                  <div className="bg-blue-500 h-full rounded-full transition-all duration-300" style={{ width: `${phase.progress}%` }}></div>
                 </div>
               </div>
             ))}
@@ -6,15 +453,170 @@
       );
     }
 
-    // --- 10. PLACEMENT VIEW ---
+    // --- 3. DSA & JAVA VIEW ---
+    function DsaJavaView({ javaTopics, setJavaTopics }) {
+      const [code, setCode] = useState(`public class Solution {\n    public static void main(String[] args) {\n        // DSA Matrix Dynamic Programming Sandbox\n        int[][] grid = {{\n            1, 3, 1},\n            {1, 5, 1},\n            {4, 2, 1}\n        };\n        System.out.println("Min Path Sum: " + minPathSum(grid));\n    }\n\n    public static int minPathSum(int[][] grid) {\n        int m = grid.length, n = grid[0].length;\n        for(int i = 0; i < m; i++) {\n            for(int j = 0; j < n; j++) {\n                if(i == 0 && j == 0) continue;\n                if(i == 0) grid[i][j] += grid[i][j-1];\n                else if(j == 0) grid[i][j] += grid[i-1][j];\n                else grid[i][j] += Math.min(grid[i-1][j], grid[i][j-1]);\n            }\n        }\n        return grid[m-1][n-1];\n    }\n}`);
+      const [output, setOutput] = useState('');
+      const [isRunning, setIsRunning] = useState(false);
+
+      const runCodeSimulated = () => {
+        setIsRunning(true);
+        setOutput('Compiling Java solution with OpenJDK 21...');
+        setTimeout(() => {
+          setOutput('Compiling Java solution with OpenJDK 21...\nBuild Successful (0.12s)\n------------------------------\nMin Path Sum: 7\n\nMemory Consumption: 42.1 MB\nTime Complexity: O(M * N)\nSpace Complexity: O(1) in-place');
+          setIsRunning(false);
+        }, 800);
+      };
+
+      return (
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="border-b border-zinc-800 pb-4">
+            <h1 className="text-xl font-bold text-white">DSA & Core Java Engineering Tracker</h1>
+            <p className="text-xs text-zinc-400 mt-0.5">Track JVM internals mastery and test algorithm logic in the embedded sandbox.</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Java Core Topics Competency Matrix */}
+            <div className="border border-zinc-800 bg-surface-900/50 rounded-lg p-5 space-y-4">
+              <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-wider font-mono">Core Java Mastery Matrix</h3>
+              <div className="space-y-4">
+                {javaTopics.map((topic) => (
+                  <div key={topic.id} className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-zinc-200">{topic.name}</span>
+                      <span className="mono text-zinc-400">{topic.master}%</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="range" min="0" max="100" value={topic.master} 
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setJavaTopics(prev => prev.map(t => t.id === topic.id ? { ...t, master: val } : t));
+                        }}
+                        className="w-full h-1.5 bg-zinc-800 accent-blue-500 rounded cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Interactive Java IDE Sandbox */}
+            <div className="border border-zinc-800 bg-surface-950 rounded-lg flex flex-col overflow-hidden h-[450px]">
+              <div className="bg-surface-900 p-3 border-b border-zinc-800 flex justify-between items-center">
+                <span className="text-xs font-mono text-zinc-400 flex items-center gap-2">
+                  <span>☕</span> Solution.java
+                </span>
+                <button 
+                  onClick={runCodeSimulated}
+                  disabled={isRunning}
+                  className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-mono rounded font-semibold transition"
+                >
+                  {isRunning ? 'Running...' : '▶ Run Code'}
+                </button>
+              </div>
+              <textarea
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className="flex-1 bg-zinc-950 p-3 font-mono text-xs text-emerald-400 outline-none resize-none leading-relaxed border-none"
+                spellCheck="false"
+              ></textarea>
+              <div className="border-t border-zinc-800 bg-surface-900 p-3 h-36 font-mono text-[11px] overflow-y-auto">
+                <div className="text-zinc-500 mb-1">Execution Terminal Output:</div>
+                <pre className="text-zinc-300 whitespace-pre-wrap">{output || 'Click "Run Code" to execute Java algorithm simulation.'}</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- 4. LEARNYARD VIEW ---
+    function LearnYardView({ learnYard, setLearnYard }) {
+      const toggleTopic = (id) => {
+        setLearnYard(prev => prev.map(item => item.id === id ? { ...item, completed: !item.completed } : item));
+      };
+
+      return (
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="border-b border-zinc-800 pb-4">
+            <h1 className="text-xl font-bold text-white">LearnYard Dedicated Syllabus Track</h1>
+            <p className="text-xs text-zinc-400 mt-0.5">Syllabus checklist for high-yield DSA patterns and systemic fundamentals.</p>
+          </div>
+
+          <div className="border border-zinc-800 bg-surface-900/40 rounded-lg divide-y divide-zinc-800">
+            {learnYard.map((item) => (
+              <div key={item.id} className="p-4 flex items-center justify-between hover:bg-zinc-900/30 transition">
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="checkbox" 
+                    checked={item.completed} 
+                    onChange={() => toggleTopic(item.id)}
+                    className="w-4 h-4 accent-blue-600 cursor-pointer rounded"
+                  />
+                  <span className={`text-xs ${item.completed ? 'line-through text-zinc-500' : 'text-zinc-200 font-medium'}`}>
+                    {item.topic}
+                  </span>
+                </div>
+                <span className="px-2 py-0.5 bg-zinc-800 text-zinc-400 text-[10px] font-mono rounded">
+                  {item.category}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // --- 5. PROJECTS & SYSTEM DESIGN VIEW ---
+    function ProjectsView({ projects, setProjects }) {
+      return (
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="border-b border-zinc-800 pb-4">
+            <h1 className="text-xl font-bold text-white">System Design & Resume Capstone Projects</h1>
+            <p className="text-xs text-zinc-400 mt-0.5">Architectural details and trade-off notes for backend projects.</p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {projects.map(p => (
+              <div key={p.id} className="border border-zinc-800 bg-surface-900/50 p-5 rounded-lg space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-sm text-zinc-100">{p.title}</h3>
+                    <p className="text-xs text-zinc-400 mt-1">{p.desc}</p>
+                  </div>
+                  <span className="px-2 py-0.5 bg-blue-950 text-blue-400 border border-blue-800 text-[10px] font-mono rounded">
+                    {p.status}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {p.tech.map((t, idx) => (
+                    <span key={idx} className="px-2 py-0.5 bg-zinc-800 text-zinc-300 text-[10px] font-mono rounded">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="border-t border-zinc-800/80 pt-3 text-xs bg-surface-950 p-3 rounded border border-zinc-800/60 font-mono text-zinc-400">
+                  <span className="text-blue-400 font-bold">Architecture Notes:</span> {p.architectureNotes}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // --- 6. PLACEMENT PIPELINE VIEW ---
     function PlacementView({ placements, setPlacements, readinessMetric }) {
-      const [newCompany, setNewCompany] = useState({ company: '', role: '', pkg: '', date: '', status: 'Applied', nextStep: '', notes: '' });
+      const [newCompany, setNewCompany] = useState({ company: '', role: '', pkg: '', status: 'Applied', nextStep: '', notes: '' });
 
       const handleAddPlacement = (e) => {
         e.preventDefault();
         if (!newCompany.company) return;
         setPlacements(prev => [{ ...newCompany, id: Date.now() }, ...prev]);
-        setNewCompany({ company: '', role: '', pkg: '', date: '', status: 'Applied', nextStep: '', notes: '' });
+        setNewCompany({ company: '', role: '', pkg: '', status: 'Applied', nextStep: '', notes: '' });
       };
 
       return (
@@ -30,7 +632,6 @@
             </div>
           </div>
 
-          {/* New Application Form */}
           <form onSubmit={handleAddPlacement} className="border border-zinc-800 bg-surface-950 p-4 rounded-lg text-xs space-y-3">
             <h3 className="font-semibold text-zinc-200">Add Target Company Application</h3>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
@@ -68,7 +669,6 @@
             </div>
           </form>
 
-          {/* Applications Table */}
           <div className="border border-zinc-800 bg-surface-950 rounded-lg overflow-x-auto">
             <table className="w-full text-left text-xs text-zinc-300">
               <thead className="bg-surface-900 border-b border-zinc-800 text-zinc-400 font-mono text-[11px]">
@@ -115,8 +715,8 @@
       );
     }
 
-    // --- 11. ANALYTICS VIEW ---
-    function AnalyticsView({ sessions, todaySchedule, learnYard, javaTopics }) {
+    // --- 7. ANALYTICS VIEW ---
+    function AnalyticsView({ sessions, todaySchedule }) {
       const totalLoggedMins = sessions.reduce((acc, s) => acc + s.actualMins, 0);
       const totalLoggedHours = (totalLoggedMins / 60).toFixed(1);
 
@@ -129,12 +729,12 @@
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="border-b border-zinc-800 pb-4">
             <h1 className="text-xl font-bold text-white">Study Analytics & Velocity Metrics</h1>
-            <p className="text-xs text-zinc-400 mt-0.5">Quantitative analysis of focus hours, subject distribution, and syllabus coverage.</p>
+            <p className="text-xs text-zinc-400 mt-0.5">Quantitative analysis of focus hours and subject distribution.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             <div className="border border-zinc-800 bg-surface-950 p-4 rounded-lg">
-              <div className="text-[11px] text-zinc-500">Total Logged Time</div>
+              <div className="text-[11px] text-zinc-500">Total Logged Focus Time</div>
               <div className="mono text-2xl font-bold text-white mt-1">{totalLoggedHours} hrs</div>
             </div>
             <div className="border border-zinc-800 bg-surface-950 p-4 rounded-lg">
@@ -149,8 +749,8 @@
             </div>
           </div>
 
-          <div className="border border-zinc-800 bg-surface-950 p-5 rounded-lg space-y-4">
-            <h3 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">Subject Focus Time Distribution</h3>
+        <div className="border border-zinc-800 bg-surface-950 p-5 rounded-lg space-y-4">
+            <h3 className="text-xs font-semibold text-zinc-300 uppercase font-mono tracking-wider">Subject Focus Time Distribution</h3>
             <div className="space-y-3">
               {Object.entries(subjectBreakdown).map(([subject, mins]) => {
                 const percent = Math.round((mins / (totalLoggedMins || 1)) * 100);
@@ -172,7 +772,7 @@
       );
     }
 
-    // --- 12. CALENDAR VIEW ---
+    // --- 8. CALENDAR VIEW ---
     function CalendarView({ sessions }) {
       const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
@@ -199,7 +799,7 @@
                     }`}
                   >
                     <span className="font-bold">{d}</span>
-                    {hasSession && <span className="w-1.5 h-1.5 rounded-full bg-blue-400 self-end"></span>}
+                    {hasSession && <span className="w-2 h-2 rounded-full bg-blue-400 self-end"></span>}
                   </div>
                 );
               })}
@@ -209,7 +809,7 @@
       );
     }
 
-    // --- 13. NOTES VIEW ---
+    // --- 9. NOTES VIEW ---
     function NotesView({ notes, setNotes }) {
       const [selectedNote, setSelectedNote] = useState(notes[0] || null);
       const [searchQuery, setSearchQuery] = useState('');
@@ -225,8 +825,7 @@
           title: "New Study Note",
           subject: "Java",
           date: new Date().toISOString().split('T')[0],
-          tags: ["Draft"],
-          content: "Write your structured engineering notes here..."
+          content: "Write your structured engineering revision notes here..."
         };
         setNotes([newNote, ...notes]);
         setSelectedNote(newNote);
@@ -258,7 +857,7 @@
                 className="w-full bg-surface-900 border border-zinc-800 text-xs rounded p-2 text-white outline-none focus:border-blue-500"
               />
 
-              <div className="space-y-2 max-h-[480px] overflow-y-auto">
+              <div className="space-y-2 max-h-[440px] overflow-y-auto">
                 {filteredNotes.map(n => (
                   <div
                     key={n.id}
@@ -313,7 +912,7 @@
                       setSelectedNote(updated);
                       setNotes(prev => prev.map(item => item.id === selectedNote.id ? updated : item));
                     }}
-                    className="w-full h-80 bg-surface-900 border border-zinc-800 rounded p-4 text-xs font-sans text-zinc-200 outline-none focus:border-blue-500 leading-relaxed"
+                    className="w-full h-80 bg-surface-900 border border-zinc-800 rounded p-4 text-xs font-mono text-zinc-200 outline-none focus:border-blue-500 leading-relaxed"
                   ></textarea>
                 </div>
               ) : (
@@ -325,8 +924,8 @@
       );
     }
 
-    // --- 14. SETTINGS VIEW ---
-    function SettingsView({ config, setConfig, setTodaySchedule, setRoadmapPhases, setProjects }) {
+    // --- 10. SETTINGS VIEW ---
+    function SettingsView({ config, setConfig }) {
       const [formConfig, setFormConfig] = useState(config);
 
       const handleSave = (e) => {
@@ -336,7 +935,7 @@
       };
 
       const handleResetData = () => {
-        if (confirm("Are you sure you want to reset all study OS state to default initial values?")) {
+        if (confirm("Are you sure you want to reset all OS data to defaults?")) {
           localStorage.clear();
           window.location.reload();
         }
@@ -346,7 +945,7 @@
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="border-b border-zinc-800 pb-4">
             <h1 className="text-xl font-bold text-white">OS Configuration & Preferences</h1>
-            <p className="text-xs text-zinc-400 mt-0.5">Customize student profile, target parameters, external integration usernames.</p>
+            <p className="text-xs text-zinc-400 mt-0.5">Customize student profile, target parameters, external integration handles.</p>
           </div>
 
           <form onSubmit={handleSave} className="border border-zinc-800 bg-surface-950 p-6 rounded-lg space-y-4 text-xs">
@@ -382,7 +981,7 @@
               </div>
 
               <div>
-                <label className="text-zinc-400 font-medium">Daily Target Study Hours</label>
+                <label className="text-zinc-400 font-medium">Daily Target Focus Hours</label>
                 <input 
                   type="number" 
                   value={formConfig.dailyTargetHours}
@@ -395,7 +994,7 @@
                 <label className="text-zinc-400 font-medium">LeetCode Username</label>
                 <input 
                   type="text" 
-                  value={formConfig.leetCodeUsername}
+                  value={formConfig.leetCodeUsername || ''}
                   onChange={e => setFormConfig({ ...formConfig, leetCodeUsername: e.target.value })}
                   className="w-full bg-surface-900 border border-zinc-800 rounded p-2 text-white mt-1 outline-none focus:border-blue-500"
                 />
@@ -405,7 +1004,7 @@
                 <label className="text-zinc-400 font-medium">Codeforces Handle</label>
                 <input 
                   type="text" 
-                  value={formConfig.codeforcesHandle}
+                  value={formConfig.codeforcesHandle || ''}
                   onChange={e => setFormConfig({ ...formConfig, codeforcesHandle: e.target.value })}
                   className="w-full bg-surface-900 border border-zinc-800 rounded p-2 text-white mt-1 outline-none focus:border-blue-500"
                 />
@@ -433,7 +1032,62 @@
       );
     }
 
-    // --- 15. RESCHEDULE MODAL ---
+    // --- 11. MODALS & SETUP WIZARDS ---
+    function LogSessionModal({ onClose, onSave }) {
+      const [subject, setSubject] = useState('DSA');
+      const [actualMins, setActualMins] = useState(60);
+      const [note, setNote] = useState('');
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        onSave({
+          id: Date.now(),
+          date: new Date().toISOString().split('T')[0],
+          subject,
+          actualMins: Number(actualMins),
+          note
+        });
+      };
+
+      return (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <form onSubmit={handleSubmit} className="border border-zinc-800 bg-surface-950 rounded-lg p-6 max-w-sm w-full space-y-4 text-xs">
+            <h3 className="text-sm font-bold text-white">Log Focus Study Session</h3>
+            <div>
+              <label className="text-zinc-400">Subject Category</label>
+              <select 
+                value={subject} onChange={e => setSubject(e.target.value)}
+                className="w-full bg-surface-900 border border-zinc-800 rounded p-2 text-white mt-1 outline-none"
+              >
+                <option value="DSA">DSA & Data Structures</option>
+                <option value="Java Core">Java & JVM Internals</option>
+                <option value="System Design">System Design</option>
+                <option value="CS Fundamentals">CS Fundamentals (OS/DBMS/CN)</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-zinc-400">Duration (Minutes)</label>
+              <input 
+                type="number" value={actualMins} onChange={e => setActualMins(e.target.value)}
+                className="w-full bg-surface-900 border border-zinc-800 rounded p-2 text-white mt-1 outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-zinc-400">Notes / Solved Problems</label>
+              <input 
+                type="text" placeholder="e.g., Solved 3 Dynamic Programming problems" value={note} onChange={e => setNote(e.target.value)}
+                className="w-full bg-surface-900 border border-zinc-800 rounded p-2 text-white mt-1 outline-none"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={onClose} className="px-3 py-1.5 text-zinc-400 hover:text-white">Cancel</button>
+              <button type="submit" className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium">Log Session</button>
+            </div>
+          </form>
+        </div>
+      );
+    }
+
     function RescheduleModal({ task, onClose, onReschedule }) {
       return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -470,7 +1124,6 @@
       );
     }
 
-    // --- 16. FIRST RUN SETUP WIZARD ---
     function FirstRunWizard({ config, onComplete }) {
       const [form, setForm] = useState(config);
 
@@ -545,6 +1198,4 @@
     root.render(<App />);
   </script>
 </body>
-    </html>
-      
-      
+</html>
