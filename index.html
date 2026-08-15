@@ -1,360 +1,550 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Placement OS - Full App</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome 6 Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <style>
-    /* Dark Theme Custom Scrollbar */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #070a11; }
-    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: #334155; }
-    
-    .nav-item { transition: all 0.2s ease-in-out; }
-    .tab-view { display: none; }
-    .tab-view.active { display: block; animation: fadeIn 0.3s ease-in-out; }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to { opacity: 1; transform: translateY(0); }
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
     }
-  </style>
-</head>
-<body class="bg-[#070a11] text-slate-200 min-h-screen flex font-sans antialiased overflow-hidden">
 
-  <!-- MOBILE SIDEBAR TOGGLE BUTTON -->
-  <button onclick="toggleSidebar()" class="lg:hidden fixed top-4 left-4 z-50 bg-indigo-600 text-white p-2.5 rounded-xl shadow-lg">
-    <i class="fa-solid fa-bars text-lg"></i>
-  </button>
+    // --- 10. PLACEMENT VIEW ---
+    function PlacementView({ placements, setPlacements, readinessMetric }) {
+      const [newCompany, setNewCompany] = useState({ company: '', role: '', pkg: '', date: '', status: 'Applied', nextStep: '', notes: '' });
 
-  <!-- SIDEBAR NAVIGATION -->
-  <aside id="sidebar" class="w-72 bg-[#0b0f19] border-r border-slate-800/80 flex flex-col justify-between h-screen p-4 select-none fixed lg:relative z-40 transition-transform -translate-x-full lg:translate-x-0">
-    
-    <!-- TOP SECTION -->
-    <div class="flex flex-col flex-1 overflow-hidden">
+      const handleAddPlacement = (e) => {
+        e.preventDefault();
+        if (!newCompany.company) return;
+        setPlacements(prev => [{ ...newCompany, id: Date.now() }, ...prev]);
+        setNewCompany({ company: '', role: '', pkg: '', date: '', status: 'Applied', nextStep: '', notes: '' });
+      };
+
+      return (
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="border-b border-zinc-800 pb-4 flex justify-between items-center">
+            <div>
+              <h1 className="text-xl font-bold text-white">Placements & Interview Pipeline</h1>
+              <p className="text-xs text-zinc-400 mt-0.5">Track target applications, Online Assessments (OA), and interview stages.</p>
+            </div>
+            <div className="text-right">
+              <span className="text-xs text-zinc-400">Target Score</span>
+              <div className="mono text-lg font-bold text-emerald-400">{readinessMetric.overallReadiness}% Ready</div>
+            </div>
+          </div>
+
+          {/* New Application Form */}
+          <form onSubmit={handleAddPlacement} className="border border-zinc-800 bg-surface-950 p-4 rounded-lg text-xs space-y-3">
+            <h3 className="font-semibold text-zinc-200">Add Target Company Application</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+              <input 
+                type="text" placeholder="Company (e.g. Amazon)" value={newCompany.company}
+                onChange={e => setNewCompany({ ...newCompany, company: e.target.value })}
+                className="bg-surface-900 border border-zinc-800 rounded p-2 text-white outline-none focus:border-blue-500" 
+              />
+              <input 
+                type="text" placeholder="Role (e.g. SDE-1)" value={newCompany.role}
+                onChange={e => setNewCompany({ ...newCompany, role: e.target.value })}
+                className="bg-surface-900 border border-zinc-800 rounded p-2 text-white outline-none focus:border-blue-500" 
+              />
+              <input 
+                type="text" placeholder="Package (e.g. ₹28 LPA)" value={newCompany.pkg}
+                onChange={e => setNewCompany({ ...newCompany, pkg: e.target.value })}
+                className="bg-surface-900 border border-zinc-800 rounded p-2 text-white outline-none focus:border-blue-500" 
+              />
+              <select 
+                value={newCompany.status} 
+                onChange={e => setNewCompany({ ...newCompany, status: e.target.value })}
+                className="bg-surface-900 border border-zinc-800 rounded p-2 text-white outline-none"
+              >
+                <option value="Applied">Applied</option>
+                <option value="OA">OA Received</option>
+                <option value="Interviewing">Interviewing</option>
+                <option value="Offered">Offered</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            <div className="flex justify-end">
+              <button type="submit" className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded">
+                Add Application
+              </button>
+            </div>
+          </form>
+
+          {/* Applications Table */}
+          <div className="border border-zinc-800 bg-surface-950 rounded-lg overflow-x-auto">
+            <table className="w-full text-left text-xs text-zinc-300">
+              <thead className="bg-surface-900 border-b border-zinc-800 text-zinc-400 font-mono text-[11px]">
+                <tr>
+                  <th className="p-3">Company</th>
+                  <th className="p-3">Role</th>
+                  <th className="p-3">Package</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3">Next Step</th>
+                  <th className="p-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800">
+                {placements.map(p => (
+                  <tr key={p.id} className="hover:bg-zinc-900/40">
+                    <td className="p-3 font-bold text-white">{p.company}</td>
+                    <td className="p-3 text-zinc-300">{p.role}</td>
+                    <td className="p-3 mono text-emerald-400 font-semibold">{p.pkg}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                        p.status === 'Offered' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' :
+                        p.status === 'Interviewing' ? 'bg-blue-950 text-blue-400 border border-blue-800' :
+                        p.status === 'OA' ? 'bg-amber-950 text-amber-400 border border-amber-800' :
+                        'bg-zinc-800 text-zinc-400'
+                      }`}>
+                        {p.status}
+                      </span>
+                    </td>
+                    <td className="p-3 text-zinc-400">{p.nextStep || '—'}</td>
+                    <td className="p-3 text-right">
+                      <button 
+                        onClick={() => setPlacements(prev => prev.filter(item => item.id !== p.id))}
+                        className="text-zinc-500 hover:text-red-400"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    // --- 11. ANALYTICS VIEW ---
+    function AnalyticsView({ sessions, todaySchedule, learnYard, javaTopics }) {
+      const totalLoggedMins = sessions.reduce((acc, s) => acc + s.actualMins, 0);
+      const totalLoggedHours = (totalLoggedMins / 60).toFixed(1);
+
+      const subjectBreakdown = sessions.reduce((acc, s) => {
+        acc[s.subject] = (acc[s.subject] || 0) + s.actualMins;
+        return acc;
+      }, {});
+
+      return (
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="border-b border-zinc-800 pb-4">
+            <h1 className="text-xl font-bold text-white">Study Analytics & Velocity Metrics</h1>
+            <p className="text-xs text-zinc-400 mt-0.5">Quantitative analysis of focus hours, subject distribution, and syllabus coverage.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+            <div className="border border-zinc-800 bg-surface-950 p-4 rounded-lg">
+              <div className="text-[11px] text-zinc-500">Total Logged Time</div>
+              <div className="mono text-2xl font-bold text-white mt-1">{totalLoggedHours} hrs</div>
+            </div>
+            <div className="border border-zinc-800 bg-surface-950 p-4 rounded-lg">
+              <div className="text-[11px] text-zinc-500">Sessions Completed</div>
+              <div className="mono text-2xl font-bold text-blue-400 mt-1">{sessions.length}</div>
+            </div>
+            <div className="border border-zinc-800 bg-surface-950 p-4 rounded-lg">
+              <div className="text-[11px] text-zinc-500">Average Session Length</div>
+              <div className="mono text-2xl font-bold text-emerald-400 mt-1">
+                {sessions.length ? Math.round(totalLoggedMins / sessions.length) : 0} mins
+              </div>
+            </div>
+          </div>
+
+          <div className="border border-zinc-800 bg-surface-950 p-5 rounded-lg space-y-4">
+            <h3 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">Subject Focus Time Distribution</h3>
+            <div className="space-y-3">
+              {Object.entries(subjectBreakdown).map(([subject, mins]) => {
+                const percent = Math.round((mins / (totalLoggedMins || 1)) * 100);
+                return (
+                  <div key={subject} className="space-y-1 text-xs">
+                    <div className="flex justify-between text-zinc-300">
+                      <span className="font-semibold">{subject}</span>
+                      <span className="mono text-zinc-400">{(mins / 60).toFixed(1)}h ({percent}%)</span>
+                    </div>
+                    <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full" style={{ width: `${percent}%` }}></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- 12. CALENDAR VIEW ---
+    function CalendarView({ sessions }) {
+      const days = Array.from({ length: 31 }, (_, i) => i + 1);
+
+      return (
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="border-b border-zinc-800 pb-4">
+            <h1 className="text-xl font-bold text-white">August 2026 Monthly Calendar</h1>
+            <p className="text-xs text-zinc-400 mt-0.5">Visualize daily study consistency and milestone target dates.</p>
+          </div>
+
+          <div className="border border-zinc-800 bg-surface-950 p-4 rounded-lg">
+            <div className="grid grid-cols-7 gap-2 text-center text-xs font-mono text-zinc-500 mb-2 border-b border-zinc-800 pb-2">
+              <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            </div>
+            <div className="grid grid-cols-7 gap-2">
+              {days.map(d => {
+                const dayStr = `2026-08-${String(d).padStart(2, '0')}`;
+                const hasSession = sessions.some(s => s.date === dayStr);
+                return (
+                  <div 
+                    key={d} 
+                    className={`h-16 border rounded p-1.5 flex flex-col justify-between text-xs font-mono transition ${
+                      hasSession ? 'border-blue-500/50 bg-blue-950/20 text-white' : 'border-zinc-800/80 bg-surface-900/40 text-zinc-500'
+                    }`}
+                  >
+                    <span className="font-bold">{d}</span>
+                    {hasSession && <span className="w-1.5 h-1.5 rounded-full bg-blue-400 self-end"></span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- 13. NOTES VIEW ---
+    function NotesView({ notes, setNotes }) {
+      const [selectedNote, setSelectedNote] = useState(notes[0] || null);
+      const [searchQuery, setSearchQuery] = useState('');
+
+      const filteredNotes = notes.filter(n => 
+        n.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        n.subject.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+
+      const handleAddNote = () => {
+        const newNote = {
+          id: Date.now(),
+          title: "New Study Note",
+          subject: "Java",
+          date: new Date().toISOString().split('T')[0],
+          tags: ["Draft"],
+          content: "Write your structured engineering notes here..."
+        };
+        setNotes([newNote, ...notes]);
+        setSelectedNote(newNote);
+      };
+
+      return (
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="border-b border-zinc-800 pb-4 flex justify-between items-center">
+            <div>
+              <h1 className="text-xl font-bold text-white">Technical Revision & Knowledge Notes</h1>
+              <p className="text-xs text-zinc-400 mt-0.5">Structured documentation for CS fundamentals, systemic trade-offs, and concepts.</p>
+            </div>
+            <button 
+              onClick={handleAddNote}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded flex items-center gap-1.5"
+            >
+              + Create Note
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border border-zinc-800 bg-surface-950 rounded-lg overflow-hidden min-h-[500px]">
+            {/* Notes List Column */}
+            <div className="border-r border-zinc-800 p-4 space-y-3">
+              <input 
+                type="text" 
+                placeholder="Search notes..." 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full bg-surface-900 border border-zinc-800 text-xs rounded p-2 text-white outline-none focus:border-blue-500"
+              />
+
+              <div className="space-y-2 max-h-[480px] overflow-y-auto">
+                {filteredNotes.map(n => (
+                  <div
+                    key={n.id}
+                    onClick={() => setSelectedNote(n)}
+                    className={`p-3 rounded border text-xs cursor-pointer transition ${
+                      selectedNote?.id === n.id ? 'border-blue-500 bg-zinc-900 text-white' : 'border-zinc-800 bg-surface-900 text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-bold text-blue-400">{n.subject}</span>
+                      <span className="mono text-[10px] text-zinc-500">{n.date}</span>
+                    </div>
+                    <div className="font-semibold text-white truncate">{n.title}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Note Editor / Preview Column */}
+            <div className="md:col-span-2 p-6 flex flex-col justify-between">
+              {selectedNote ? (
+                <div className="space-y-4">
+                  <div className="border-b border-zinc-800 pb-3 flex justify-between items-start">
+                    <div>
+                      <input
+                        type="text"
+                        value={selectedNote.title}
+                        onChange={e => {
+                          const updated = { ...selectedNote, title: e.target.value };
+                          setSelectedNote(updated);
+                          setNotes(prev => prev.map(item => item.id === selectedNote.id ? updated : item));
+                        }}
+                        className="text-lg font-bold text-white bg-transparent outline-none border-b border-transparent focus:border-zinc-700 w-full"
+                      />
+                      <div className="text-xs text-zinc-500 mt-1">Subject: <span className="text-blue-400 font-medium">{selectedNote.subject}</span></div>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        setNotes(prev => prev.filter(item => item.id !== selectedNote.id));
+                        setSelectedNote(notes[0] || null);
+                      }}
+                      className="text-xs text-zinc-500 hover:text-red-400"
+                    >
+                      Delete
+                    </button>
+                  </div>
+
+                  <textarea
+                    value={selectedNote.content}
+                    onChange={e => {
+                      const updated = { ...selectedNote, content: e.target.value };
+                      setSelectedNote(updated);
+                      setNotes(prev => prev.map(item => item.id === selectedNote.id ? updated : item));
+                    }}
+                    className="w-full h-80 bg-surface-900 border border-zinc-800 rounded p-4 text-xs font-sans text-zinc-200 outline-none focus:border-blue-500 leading-relaxed"
+                  ></textarea>
+                </div>
+              ) : (
+                <div className="text-xs text-zinc-500 text-center my-auto">Select or create a note to edit.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- 14. SETTINGS VIEW ---
+    function SettingsView({ config, setConfig, setTodaySchedule, setRoadmapPhases, setProjects }) {
+      const [formConfig, setFormConfig] = useState(config);
+
+      const handleSave = (e) => {
+        e.preventDefault();
+        setConfig(formConfig);
+        alert("Configuration saved successfully!");
+      };
+
+      const handleResetData = () => {
+        if (confirm("Are you sure you want to reset all study OS state to default initial values?")) {
+          localStorage.clear();
+          window.location.reload();
+        }
+      };
+
+      return (
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div className="border-b border-zinc-800 pb-4">
+            <h1 className="text-xl font-bold text-white">OS Configuration & Preferences</h1>
+            <p className="text-xs text-zinc-400 mt-0.5">Customize student profile, target parameters, external integration usernames.</p>
+          </div>
+
+          <form onSubmit={handleSave} className="border border-zinc-800 bg-surface-950 p-6 rounded-lg space-y-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-zinc-400 font-medium">Student Name</label>
+                <input 
+                  type="text" 
+                  value={formConfig.studentName}
+                  onChange={e => setFormConfig({ ...formConfig, studentName: e.target.value })}
+                  className="w-full bg-surface-900 border border-zinc-800 rounded p-2 text-white mt-1 outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-zinc-400 font-medium">Graduation Year</label>
+                <input 
+                  type="number" 
+                  value={formConfig.graduationYear}
+                  onChange={e => setFormConfig({ ...formConfig, graduationYear: Number(e.target.value) })}
+                  className="w-full bg-surface-900 border border-zinc-800 rounded p-2 text-white mt-1 outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-zinc-400 font-medium">Target LPA Salary Package</label>
+                <input 
+                  type="text" 
+                  value={formConfig.targetLPA}
+                  onChange={e => setFormConfig({ ...formConfig, targetLPA: e.target.value })}
+                  className="w-full bg-surface-900 border border-zinc-800 rounded p-2 text-white mt-1 outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-zinc-400 font-medium">Daily Target Study Hours</label>
+                <input 
+                  type="number" 
+                  value={formConfig.dailyTargetHours}
+                  onChange={e => setFormConfig({ ...formConfig, dailyTargetHours: Number(e.target.value) })}
+                  className="w-full bg-surface-900 border border-zinc-800 rounded p-2 text-white mt-1 outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-zinc-400 font-medium">LeetCode Username</label>
+                <input 
+                  type="text" 
+                  value={formConfig.leetCodeUsername}
+                  onChange={e => setFormConfig({ ...formConfig, leetCodeUsername: e.target.value })}
+                  className="w-full bg-surface-900 border border-zinc-800 rounded p-2 text-white mt-1 outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-zinc-400 font-medium">Codeforces Handle</label>
+                <input 
+                  type="text" 
+                  value={formConfig.codeforcesHandle}
+                  onChange={e => setFormConfig({ ...formConfig, codeforcesHandle: e.target.value })}
+                  className="w-full bg-surface-900 border border-zinc-800 rounded p-2 text-white mt-1 outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-zinc-800 flex justify-between items-center">
+              <button 
+                type="button" 
+                onClick={handleResetData}
+                className="px-4 py-2 bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800 rounded font-medium"
+              >
+                Reset OS Data to Defaults
+              </button>
+
+              <button 
+                type="submit" 
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-semibold"
+              >
+                Save Preferences
+              </button>
+            </div>
+          </form>
+        </div>
+      );
+    }
+
+    // --- 15. RESCHEDULE MODAL ---
+    function RescheduleModal({ task, onClose, onReschedule }) {
+      return (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="border border-zinc-800 bg-surface-950 rounded-lg p-6 max-w-sm w-full space-y-4">
+            <h3 className="text-sm font-bold text-white">Reschedule Task</h3>
+            <p className="text-xs text-zinc-400">"{task.subject} — {task.task}"</p>
+
+            <div className="space-y-2">
+              <button
+                onClick={() => onReschedule('tomorrow')}
+                className="w-full text-left p-2 bg-surface-900 hover:bg-zinc-800 border border-zinc-800 rounded text-xs text-zinc-200"
+              >
+                📅 Move to Tomorrow's Queue
+              </button>
+              <button
+                onClick={() => onReschedule('skip')}
+                className="w-full text-left p-2 bg-surface-900 hover:bg-zinc-800 border border-zinc-800 rounded text-xs text-zinc-400"
+              >
+                ⏭ Skip Task Today
+              </button>
+              <button
+                onClick={() => onReschedule('delete')}
+                className="w-full text-left p-2 bg-surface-900 hover:bg-red-950/50 border border-zinc-800 rounded text-xs text-red-400"
+              >
+                🗑 Delete Task
+              </button>
+            </div>
+
+            <div className="pt-2 text-right">
+              <button onClick={onClose} className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white">Cancel</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- 16. FIRST RUN SETUP WIZARD ---
+    function FirstRunWizard({ config, onComplete }) {
+      const [form, setForm] = useState(config);
+
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-surface-950 p-4 text-zinc-100 font-sans">
+          <div className="max-w-md w-full border border-zinc-800 bg-surface-900 rounded-xl p-6 space-y-6 shadow-2xl">
+            <div className="text-center space-y-1">
+              <h1 className="text-xl font-bold tracking-tight text-white font-mono">Developer Study OS</h1>
+              <p className="text-xs text-zinc-400">Setup your personalized engineering placement target parameters.</p>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="text-zinc-300 font-medium">What is your name?</label>
+                <input 
+                  type="text"
+                  value={form.studentName}
+                  onChange={e => setForm({ ...form, studentName: e.target.value })}
+                  className="w-full bg-surface-950 border border-zinc-800 rounded p-2 text-white mt-1 outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-zinc-300 font-medium">Graduation Target Year</label>
+                <select
+                  value={form.graduationYear}
+                  onChange={e => setForm({ ...form, graduationYear: Number(e.target.value) })}
+                  className="w-full bg-surface-950 border border-zinc-800 rounded p-2 text-white mt-1 outline-none"
+                >
+                  <option value={2026}>2026</option>
+                  <option value={2027}>2027</option>
+                  <option value={2028}>2028</option>
+                  <option value={2029}>2029</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-zinc-300 font-medium">Target Placement Package</label>
+                <input 
+                  type="text"
+                  value={form.targetLPA}
+                  onChange={e => setForm({ ...form, targetLPA: e.target.value })}
+                  className="w-full bg-surface-950 border border-zinc-800 rounded p-2 text-white mt-1 outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-zinc-300 font-medium">Daily Target Focus Hours</label>
+                <input 
+                  type="number"
+                  value={form.dailyTargetHours}
+                  onChange={e => setForm({ ...form, dailyTargetHours: Number(e.target.value) })}
+                  className="w-full bg-surface-950 border border-zinc-800 rounded p-2 text-white mt-1 outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={() => onComplete(form)}
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded transition"
+            >
+              Launch Developer Study OS →
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MOUNT REACT APP ---
+    const rootElement = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<App />);
+  </script>
+</body>
+    </html>
       
-      <!-- APP HEADER -->
-      <div class="flex items-center gap-3 px-2 py-3 mb-3">
-        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 via-purple-600 to-violet-700 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-mono font-bold text-base">
-          &gt;_
-        </div>
-        <div>
-          <h1 class="font-bold text-base text-white tracking-wide">Placement OS</h1>
-          <span id="target-badge" class="text-[9px] font-semibold tracking-wider text-indigo-400 uppercase bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md">
-            TARGET: ₹20–30 LPA
-          </span>
-        </div>
-      </div>
-
-      <!-- MENU LIST -->
-      <nav class="flex-1 space-y-1 overflow-y-auto pr-1">
-        
-        <button onclick="switchTab(this, 'tab-dashboard')" class="nav-item active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-white bg-slate-800/80 border border-slate-700/60 shadow-md">
-          <i class="fa-solid fa-chart-pie w-4 text-center text-indigo-400"></i>
-          <span>Dashboard</span>
-        </button>
-
-        <button onclick="switchTab(this, 'tab-schedule')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/40">
-          <i class="fa-solid fa-calendar-days w-4 text-center text-indigo-400"></i>
-          <span>Daily Schedule</span>
-        </button>
-
-        <button onclick="switchTab(this, 'tab-timer')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/40">
-          <i class="fa-solid fa-stopwatch w-4 text-center text-indigo-400"></i>
-          <span>Study Timer</span>
-        </button>
-
-        <button onclick="switchTab(this, 'tab-todos')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/40">
-          <i class="fa-solid fa-list-check w-4 text-center text-indigo-400"></i>
-          <span>Tasks &amp; Todos</span>
-        </button>
-
-        <button onclick="switchTab(this, 'tab-dsa')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/40">
-          <i class="fa-solid fa-code w-4 text-center text-indigo-400"></i>
-          <span>DSA Mastery</span>
-        </button>
-
-        <button onclick="switchTab(this, 'tab-java')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/40">
-          <i class="fa-brands fa-java w-4 text-center text-indigo-400 text-sm"></i>
-          <span>Java Backend</span>
-        </button>
-
-        <button onclick="switchTab(this, 'tab-roadmap')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/40">
-          <i class="fa-solid fa-server w-4 text-center text-indigo-400"></i>
-          <span>Backend Roadmap</span>
-        </button>
-
-        <button onclick="switchTab(this, 'tab-projects')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/40">
-          <i class="fa-solid fa-diagram-project w-4 text-center text-indigo-400"></i>
-          <span>Target Projects</span>
-        </button>
-
-        <button onclick="switchTab(this, 'tab-analytics')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/40">
-          <i class="fa-solid fa-chart-line w-4 text-center text-indigo-400"></i>
-          <span>Analytics</span>
-        </button>
-
-        <button onclick="switchTab(this, 'tab-calendar')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/40">
-          <i class="fa-solid fa-calendar w-4 text-center text-indigo-400"></i>
-          <span>Calendar Log</span>
-        </button>
-
-        <button onclick="switchTab(this, 'tab-history')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/40">
-          <i class="fa-solid fa-clock-rotate-left w-4 text-center text-indigo-400"></i>
-          <span>Session History</span>
-        </button>
-
-        <button onclick="switchTab(this, 'tab-settings')" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/40">
-          <i class="fa-solid fa-sliders w-4 text-center text-indigo-400"></i>
-          <span>Settings</span>
-        </button>
-
-      </nav>
-    </div>
-
-    <!-- TIMER WIDGET -->
-    <div class="mt-3 pt-3 border-t border-slate-800/60">
-      <div class="bg-gradient-to-b from-[#121828] to-[#0e1320] border border-slate-800/80 rounded-2xl p-3.5 text-center shadow-xl">
-        <span id="session-status" class="text-[9px] font-bold tracking-widest text-slate-400 uppercase block">NO ACTIVE SESSION</span>
-        <div id="timer-display" class="font-mono text-xl font-bold text-white tracking-widest my-1.5">00:00:00</div>
-        <div class="flex items-center justify-center gap-2">
-          <button id="timer-btn" onclick="toggleTimer()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 py-1.5 rounded-lg transition-all shadow-md shadow-indigo-600/30">Start</button>
-          <button onclick="resetTimer()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-1.5 rounded-lg border border-slate-700/50"><i class="fa-solid fa-arrows-rotate text-xs"></i></button>
-        </div>
-      </div>
-    </div>
-
-  </aside>
-
-  <!-- MAIN CONTENT VIEWS AREA -->
-  <main class="flex-1 p-6 lg:p-10 bg-[#070a11] overflow-y-auto h-screen">
-
-    <!-- 1. DASHBOARD TAB -->
-    <section id="tab-dashboard" class="tab-view active space-y-6 max-w-6xl">
-      <div>
-        <h2 class="text-2xl font-bold text-white">Dashboard Overview</h2>
-        <p class="text-xs text-slate-400">Track your overall interview prep metrics in real-time.</p>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
-          <span class="text-xs text-slate-400">DSA Solved</span>
-          <div class="text-2xl font-bold text-indigo-400 mt-1">248 / 450</div>
-          <span class="text-[10px] text-emerald-400"><i class="fa-solid fa-arrow-up"></i> +12 this week</span>
-        </div>
-        <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
-          <span class="text-xs text-slate-400">Study Streak</span>
-          <div class="text-2xl font-bold text-amber-400 mt-1">18 Days 🔥</div>
-          <span class="text-[10px] text-slate-400">Personal Best: 24 Days</span>
-        </div>
-        <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
-          <span class="text-xs text-slate-400">Backend Readiness</span>
-          <div class="text-2xl font-bold text-emerald-400 mt-1">72%</div>
-          <span class="text-[10px] text-indigo-400">Spring Boot + Redis</span>
-        </div>
-        <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
-          <span class="text-xs text-slate-400">Mock Interviews</span>
-          <div class="text-2xl font-bold text-purple-400 mt-1">5 Completed</div>
-          <span class="text-[10px] text-slate-400">Avg Score: 8.5/10</span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl">
-          <h3 class="text-sm font-bold text-white mb-3">Today's Focus Area</h3>
-          <ul class="space-y-3 text-xs">
-            <li class="flex items-center justify-between p-2.5 bg-slate-800/40 rounded-xl">
-              <span class="text-slate-300"><i class="fa-solid fa-circle-check text-emerald-400 mr-2"></i> Solve 2 Graph DP Problems</span>
-              <span class="bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded">High</span>
-            </li>
-            <li class="flex items-center justify-between p-2.5 bg-slate-800/40 rounded-xl">
-              <span class="text-slate-300"><i class="fa-solid fa-circle text-amber-400 mr-2"></i> Implement Redis Caching in Project</span>
-              <span class="bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded">Medium</span>
-            </li>
-          </ul>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl">
-          <h3 class="text-sm font-bold text-white mb-3">Goal Timeline</h3>
-          <div class="space-y-2">
-            <div class="flex justify-between text-xs text-slate-400">
-              <span>Target Readiness</span>
-              <span class="text-indigo-400 font-bold">68%</span>
-            </div>
-            <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
-              <div class="bg-indigo-500 h-full w-[68%]"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 2. DAILY SCHEDULE -->
-    <section id="tab-schedule" class="tab-view space-y-6 max-w-4xl">
-      <div>
-        <h2 class="text-2xl font-bold text-white">Daily Time Blocking</h2>
-        <p class="text-xs text-slate-400">Structured schedule to maximize daily output.</p>
-      </div>
-      <div class="space-y-3">
-        <div class="flex items-center gap-4 p-4 bg-slate-900/80 border border-slate-800 rounded-2xl">
-          <span class="text-xs font-mono text-indigo-400 font-bold w-24">07:00 - 09:00</span>
-          <div>
-            <h4 class="text-sm font-semibold text-white">DSA Morning Grind</h4>
-            <p class="text-xs text-slate-400">LeetCode Medium/Hard Tree & Graph patterns.</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-4 p-4 bg-slate-900/80 border border-slate-800 rounded-2xl">
-          <span class="text-xs font-mono text-indigo-400 font-bold w-24">10:00 - 13:00</span>
-          <div>
-            <h4 class="text-sm font-semibold text-white">Java Backend Engineering</h4>
-            <p class="text-xs text-slate-400">Spring Security, JWT & Microservice architecture setup.</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-4 p-4 bg-slate-900/80 border border-slate-800 rounded-2xl">
-          <span class="text-xs font-mono text-indigo-400 font-bold w-24">16:00 - 18:00</span>
-          <div>
-            <h4 class="text-sm font-semibold text-white">System Design & LLD</h4>
-            <p class="text-xs text-slate-400">Designing Rate Limiters & URL Shorteners.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 3. STUDY TIMER -->
-    <section id="tab-timer" class="tab-view space-y-6 max-w-xl text-center py-10">
-      <h2 class="text-3xl font-bold text-white">Focus Mode</h2>
-      <p class="text-xs text-slate-400">Deep work timer with customizable pomodoro breaks.</p>
-      <div class="bg-slate-900/90 border border-slate-800 p-8 rounded-3xl shadow-2xl">
-        <div class="font-mono text-6xl font-bold text-indigo-400 my-6">25:00</div>
-        <div class="flex justify-center gap-3">
-          <button class="bg-indigo-600 px-6 py-2.5 rounded-xl font-semibold text-sm">Start Pomodoro</button>
-          <button class="bg-slate-800 px-6 py-2.5 rounded-xl font-semibold text-sm text-slate-300">Short Break</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- 4. TASKS & TODOS -->
-    <section id="tab-todos" class="tab-view space-y-6 max-w-4xl">
-      <h2 class="text-2xl font-bold text-white">Placement Action Items</h2>
-      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
-        <div class="flex gap-2 mb-4">
-          <input type="text" placeholder="Add new task..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-indigo-500">
-          <button class="bg-indigo-600 px-4 py-2 rounded-xl text-xs font-semibold">Add</button>
-        </div>
-        <div class="space-y-2 text-xs">
-          <label class="flex items-center gap-3 p-3 bg-slate-800/30 rounded-xl cursor-pointer">
-            <input type="checkbox" checked class="accent-indigo-500">
-            <span class="line-through text-slate-500">Revise Sliding Window & Two Pointer techniques</span>
-          </label>
-          <label class="flex items-center gap-3 p-3 bg-slate-800/30 rounded-xl cursor-pointer">
-            <input type="checkbox" class="accent-indigo-500">
-            <span>Write Unit Tests for Payment Microservice</span>
-          </label>
-        </div>
-      </div>
-    </section>
-
-    <!-- 5. DSA MASTERY -->
-    <section id="tab-dsa" class="tab-view space-y-6 max-w-5xl">
-      <h2 class="text-2xl font-bold text-white">DSA Roadmap &amp; Progress</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-          <h3 class="font-bold text-emerald-400 text-sm">Easy</h3>
-          <p class="text-xl font-bold text-white my-1">110 / 120</p>
-          <div class="w-full bg-slate-950 h-1.5 rounded-full"><div class="bg-emerald-500 h-full w-[90%]"></div></div>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-          <h3 class="font-bold text-amber-400 text-sm">Medium</h3>
-          <p class="text-xl font-bold text-white my-1">115 / 250</p>
-          <div class="w-full bg-slate-950 h-1.5 rounded-full"><div class="bg-amber-500 h-full w-[46%]"></div></div>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-          <h3 class="font-bold text-rose-400 text-sm">Hard</h3>
-          <p class="text-xl font-bold text-white my-1">23 / 80</p>
-          <div class="w-full bg-slate-950 h-1.5 rounded-full"><div class="bg-rose-500 h-full w-[28%]"></div></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 6. JAVA BACKEND -->
-    <section id="tab-java" class="tab-view space-y-6 max-w-4xl">
-      <h2 class="text-2xl font-bold text-white">Java &amp; Spring Boot Ecosystem</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-          <h4 class="font-bold text-indigo-400 mb-2">Core Java Concepts</h4>
-          <ul class="list-disc list-inside text-slate-300 space-y-1">
-            <li>Multithreading &amp; Concurrency API</li>
-            <li>JVM Architecture &amp; Garbage Collection</li>
-            <li>Java 17 / 21 Virtual Threads</li>
-          </ul>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-          <h4 class="font-bold text-indigo-400 mb-2">Spring Framework</h4>
-          <ul class="list-disc list-inside text-slate-300 space-y-1">
-            <li>Spring Boot 3.x Starter &amp; AutoConfig</li>
-            <li>Spring Data JPA &amp; Hibernate Optimization</li>
-            <li>Spring Security + JWT Auth</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <!-- 7. BACKEND ROADMAP -->
-    <section id="tab-roadmap" class="tab-view space-y-6 max-w-4xl">
-      <h2 class="text-2xl font-bold text-white">Backend Engineering Step-by-Step</h2>
-      <div class="space-y-4 text-xs">
-        <div class="p-4 bg-slate-900 border border-slate-800 rounded-2xl border-l-4 border-l-indigo-500">
-          <span class="text-indigo-400 font-bold">Step 1</span>
-          <h4 class="font-bold text-white text-sm">Databases &amp; SQL Query Optimization</h4>
-          <p class="text-slate-400">Indexing, Transactions, ACID Properties, Normalization, Sharding.</p>
-        </div>
-        <div class="p-4 bg-slate-900 border border-slate-800 rounded-2xl border-l-4 border-l-purple-500">
-          <span class="text-purple-400 font-bold">Step 2</span>
-          <h4 class="font-bold text-white text-sm">Caching &amp; Message Queues</h4>
-          <p class="text-slate-400">Redis caching strategies, Apache Kafka event streaming.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- 8. TARGET PROJECTS -->
-    <section id="tab-projects" class="tab-view space-y-6 max-w-5xl">
-      <h2 class="text-2xl font-bold text-white">Resume Projects</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
-          <span class="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded font-bold">Microservices</span>
-          <h3 class="font-bold text-white text-base mt-2">Distributed E-Commerce Platform</h3>
-          <p class="text-xs text-slate-400 my-2">Built with Spring Cloud, API Gateway, Docker &amp; Kafka message queues.</p>
-          <div class="flex gap-2 text-xs">
-            <span class="text-slate-500">#Java</span>
-            <span class="text-slate-500">#Redis</span>
-            <span class="text-slate-500">#Docker</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 9. ANALYTICS -->
-    <section id="tab-analytics" class="tab-view space-y-6 max-w-4xl">
-      <h2 class="text-2xl font-bold text-white">Performance Analytics</h2>
-      <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl text-center text-xs text-slate-400">
-        <i class="fa-solid fa-chart-area text-4xl text-indigo-400 mb-2"></i>
-        <p>Weekly Study Hours Distribution Chart Loaded.</p>
-      </div>
-    </section>
-
-    <!-- 10. CALENDAR LOG -->
-    <section id="tab-calendar" class="tab-view space-y-6 max-w-4xl">
-      <h2 class="text-2xl font-bold text-white">Consistency Calendar</h2>
-      <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-        <p class="text-xs text-slate-400 mb-4">August 2026 Commit Heatmap</p>
-        <div class="grid grid-cols-7 gap-2 text-center text-xs">
-          <div class="bg-emerald-500/80 p-2 rounded text-black font-bold">14</div>
-          <div class="bg-emerald-600/80 p-2 rounded text-white">15</div>
-          <div class="bg-slate-800 p-2 rounded text-slate-500">16</div>
-        </div>
-      </div>
-    <
+      
